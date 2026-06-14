@@ -126,12 +126,12 @@ function HomeContent() {
       patch.category = "new_building";
       changed = true;
     }
-    if (!patch.city && cityId && cityId !== 0) {
+    if (!patch.city && cityId && (cityId as number) !== 0) {
       patch.city = cityId;
       changed = true;
     }
     // cityId === 0 means "Дагестан" (all cities) — no city filter
-    if (patch.city && cityId === 0) {
+    if (patch.city && (cityId as number) === 0) {
       delete patch.city;
       changed = true;
     }
