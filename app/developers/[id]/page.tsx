@@ -185,7 +185,7 @@ export default function DeveloperDetailPage() {
             disabled={subLoading}
             style={{
               display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "11px 22px", borderRadius: 14, border: "none",
+              padding: "11px 22px", borderRadius: 14,
               cursor: subLoading ? "not-allowed" : "pointer",
               opacity: subLoading ? 0.6 : 1,
               fontFamily: "var(--font-stetica-bold), system-ui, sans-serif",
