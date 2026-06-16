@@ -38,10 +38,7 @@ export function FilterBar({
   }, []);
 
   return (
-    <section
-      id="catalog"
-      style={{ marginTop: 20, marginBottom: 14 }}
-    >
+    <section id="catalog">
       <div
         style={{
           display: "flex",

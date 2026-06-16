@@ -171,33 +171,55 @@ function HomeContent() {
     updateFilters({});
   }, [updateFilters]);
 
+  // Прямая мутация DOM — без React-ре-рендера, мгновенная реакция.
+  // placeholder держит 60px в потоке, barWrapRef переключается в fixed.
+  const placeholderRef = useRef<HTMLDivElement>(null);
+  const barWrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const FIXED = "position:fixed;top:0;left:0;right:0;z-index:200;background:var(--home-bg);padding:10px 0;will-change:transform";
+    const NORMAL = "padding:10px 0";
+    const check = () => {
+      if (!placeholderRef.current || !barWrapRef.current) return;
+      const pinned = placeholderRef.current.getBoundingClientRect().top <= 0;
+      barWrapRef.current.style.cssText = pinned ? FIXED : NORMAL;
+    };
+    window.addEventListener("scroll", check, { passive: true });
+    check();
+    return () => window.removeEventListener("scroll", check);
+  }, []);
+
   return (
     <>
-      <div
-        className="home-content-wrapper"
-        style={{
-          background: "var(--home-bg)",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <div
-          className="home-container"
-          style={{
-            maxWidth: 1280,
-            margin: "0 auto",
-            padding: "12px 0 64px",
-          }}
-        >
+      {/* Banner — scrolls normally */}
+      <div style={{ background: "var(--home-bg)" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 0 0" }}>
           <PromoBanner />
+        </div>
+      </div>
 
+      {/* placeholder держит место в потоке, barWrapRef мутируется напрямую */}
+      <div ref={placeholderRef} style={{ height: 60 }}>
+        <div ref={barWrapRef} style={{ padding: "10px 0" }}>
           <FilterBar
             filters={filters}
             onFiltersChange={updateFilters}
             sortKey={sortKey}
             onSortChange={setSortKey}
           />
+        </div>
+      </div>
 
+      {/* Rest of page content */}
+      <div style={{ background: "var(--home-bg)" }}>
+        <div
+          className="home-container"
+          style={{
+            maxWidth: 1280,
+            margin: "0 auto",
+            padding: "0 0 64px",
+          }}
+        >
           <ListingsGrid
             cards={sortedCards}
             loading={activeLoading}
@@ -220,7 +242,7 @@ function HomeContent() {
       <style jsx>{`
         @media (max-width: 640px) {
           .home-container {
-            padding: 8px 0 48px !important;
+            padding: 0 0 48px !important;
           }
         }
       `}</style>

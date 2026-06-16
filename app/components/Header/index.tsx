@@ -187,7 +187,7 @@ const SearchBar = ({
         border-radius: 0 !important;
         color: ${focused ? "#111" : "#FFFFFF"} !important;
         font-family: var(--font-inter), system-ui, sans-serif;
-        font-size: ${compact ? 14 : 15}px;
+        font-size: 16px;
         height: 100%;
       }
       .header-search-slot :global(input::placeholder) {

@@ -8,7 +8,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import {
   Eye, Camera, ArrowLeft, Zap, Heart, Clock,
-  Gift, User, ChevronRight, LogOut,
+  Gift, User, ChevronRight, LogOut, Star, MessageCircle,
 } from "lucide-react";
 import { useProfileData, useReferralData, useAccountActions } from "./hooks";
 import { AccountSection, ReferralSection } from "./ui";
@@ -97,9 +97,11 @@ function ProfileContent() {
   const avatarLetter = profile.name ? profile.name.charAt(0).toUpperCase() : "";
 
   const NAV_ITEMS = [
-    { key: "referral", label: "Рефералы",  icon: <Gift size={18} />,          section: "Программа" },
-    { key: "account",  label: "Аккаунт",   icon: <User size={18} />,           section: "Управление" },
-    { key: "views",    label: "Просмотры", icon: <Eye size={18} />,            section: "Активность" },
+    { key: "referral",  label: "Рефералы",  icon: <Gift          size={18} />, section: "Программа"  },
+    { key: "account",   label: "Аккаунт",   icon: <User          size={18} />, section: "Управление" },
+    { key: "views",     label: "Просмотры", icon: <Eye           size={18} />, section: "Активность" },
+    { key: "reviews",   label: "Отзывы",    icon: <Star          size={18} />, section: "Отзывы"     },
+    { key: "questions", label: "Вопросы",   icon: <MessageCircle size={18} />, section: "Вопросы"    },
   ];
 
   const STATS = [
@@ -240,11 +242,16 @@ function ProfileContent() {
           background: #0A0A0F;
           border-bottom: 1px solid rgba(255,255,255,0.05);
           gap: 6px; padding: 10px 16px;
-          max-width: 640px; margin: 0 auto; width: 100%;
+          width: 100%;
           box-sizing: border-box;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
         }
+        .pf-tabs::-webkit-scrollbar { display: none; }
         :global(.pf-tab) {
-          flex: 1; text-align: center; padding: 9px 4px; border-radius: 12px;
+          flex-shrink: 0; white-space: nowrap;
+          text-align: center; padding: 9px 16px; border-radius: 12px;
           font-size: 13px; font-family: var(--font-stetica-bold);
           transition: all 0.15s; text-decoration: none;
         }
@@ -432,6 +439,8 @@ function ProfileContent() {
             {activeSection === "views" && (
               <ViewsSection recentViews={recentViews} />
             )}
+            {activeSection === "reviews" && <ReviewsSection />}
+            {activeSection === "questions" && <QuestionsSection />}
           </div>
         </main>
       </div>
@@ -495,6 +504,30 @@ function ViewsSection({ recentViews }: { recentViews: import("@/app/types/models
         .views-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         @media (min-width: 768px) { .views-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
       `}</style>
+    </div>
+  );
+}
+
+function ReviewsSection() {
+  return (
+    <div style={{ textAlign: "center", padding: "52px 20px", backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 18, border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px", backgroundColor: "rgba(0,117,255,0.1)", border: "1px solid rgba(0,117,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Star size={24} color="#0075FF" />
+      </div>
+      <p style={{ fontFamily: "var(--font-stetica-bold)", fontSize: 15, color: "#fff", marginBottom: 6 }}>Нет отзывов</p>
+      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Ваши отзывы об объектах появятся здесь</p>
+    </div>
+  );
+}
+
+function QuestionsSection() {
+  return (
+    <div style={{ textAlign: "center", padding: "52px 20px", backgroundColor: "rgba(255,255,255,0.03)", borderRadius: 18, border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px", backgroundColor: "rgba(0,117,255,0.1)", border: "1px solid rgba(0,117,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <MessageCircle size={24} color="#0075FF" />
+      </div>
+      <p style={{ fontFamily: "var(--font-stetica-bold)", fontSize: 15, color: "#fff", marginBottom: 6 }}>Нет вопросов</p>
+      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Ваши вопросы по объектам появятся здесь</p>
     </div>
   );
 }

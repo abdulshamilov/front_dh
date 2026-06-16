@@ -73,6 +73,40 @@ export default function DevelopersPage() {
         </div>
       </div>
 
+      <style>{`
+        .dev-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 10px;
+        }
+        @media (max-width: 640px) {
+          .dev-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          .dev-card {
+            padding: 10px 8px !important;
+            gap: 8px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+          .dev-logo {
+            width: 44px !important;
+            height: 44px !important;
+          }
+          .dev-arrow {
+            display: none !important;
+          }
+          .dev-name {
+            font-size: 13px !important;
+          }
+          .dev-meta {
+            flex-direction: column !important;
+            gap: 3px !important;
+            align-items: flex-start !important;
+          }
+        }
+      `}</style>
+
       {/* List */}
       <div style={{ maxWidth: 1300, margin: "0 auto", padding: "24px 16px 64px" }}>
         {error && (
@@ -86,11 +120,7 @@ export default function DevelopersPage() {
           </div>
         )}
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-          gap: 10,
-        }}>
+        <div className="dev-grid">
           {loading
             ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} />)
             : developers.map((dev) => {
@@ -100,6 +130,7 @@ export default function DevelopersPage() {
                   <Link
                     key={dev.id}
                     href={`/developers/${dev.id}`}
+                    className="dev-card"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -124,7 +155,7 @@ export default function DevelopersPage() {
                     }}
                   >
                     {/* Logo */}
-                    <div style={{
+                    <div className="dev-logo" style={{
                       width: 64,
                       height: 64,
                       borderRadius: 12,
@@ -157,7 +188,7 @@ export default function DevelopersPage() {
 
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
+                      <div className="dev-name" style={{
                         fontFamily: "var(--font-stetica-bold), system-ui, sans-serif",
                         fontSize: 15,
                         color: "#FFFFFF",
@@ -169,7 +200,7 @@ export default function DevelopersPage() {
                         {dev.name}
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 5, flexWrap: "wrap" }}>
+                      <div className="dev-meta" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 5, flexWrap: "wrap" }}>
                         {count > 0 && (
                           <span style={{
                             fontFamily: "var(--font-inter), system-ui, sans-serif",
@@ -197,7 +228,7 @@ export default function DevelopersPage() {
                     </div>
 
                     {/* Arrow */}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, color: "rgba(255,255,255,0.2)" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="dev-arrow" style={{ flexShrink: 0, color: "rgba(255,255,255,0.2)" }}>
                       <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </Link>
