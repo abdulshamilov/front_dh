@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CircleUser } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
 import { fetchUser } from "@/app/shared/redux/slices/auth";
 
@@ -13,6 +13,11 @@ type HeaderAvatarProps = {
 export const HeaderAvatar = ({ variant = "desktop" }: HeaderAvatarProps) => {
   const dispatch = useAppDispatch();
   const { user, isAuth, initialized } = useAppSelector((state) => state.auth);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isAuth && !user && initialized) {
@@ -20,15 +25,18 @@ export const HeaderAvatar = ({ variant = "desktop" }: HeaderAvatarProps) => {
     }
   }, [dispatch, isAuth, user, initialized]);
 
+  // Before mount: always render unauthenticated shell to match server HTML
+  const resolvedAuth = mounted ? isAuth : false;
+
   const { firstName, lastName } = useMemo(() => {
     if (!user?.name) return { firstName: "Пользователь", lastName: "" };
     const parts = user.name.trim().split(" ");
     return { firstName: parts[0] || "Пользователь", lastName: parts[1] || "" };
   }, [user?.name]);
 
-  const href = isAuth ? "/profile" : "/login";
+  const href = resolvedAuth ? "/profile" : "/login";
 
-  if (variant === "mobile" || !isAuth) {
+  if (variant === "mobile" || !resolvedAuth) {
     return (
       <Link
         href={href}
@@ -44,13 +52,13 @@ export const HeaderAvatar = ({ variant = "desktop" }: HeaderAvatarProps) => {
         onMouseLeave={(e) =>
           (e.currentTarget.style.borderColor = "var(--border-color)")
         }
-        aria-label={isAuth ? "Профиль" : "Войти"}
+        aria-label={resolvedAuth ? "Профиль" : "Войти"}
       >
         <CircleUser
           strokeWidth={1.25}
           style={{ color: "var(--accent-primary)", transition: "color 0.3s ease" }}
         />
-        {!isAuth && <span className="max-[950px]:hidden">Войти</span>}
+        {!resolvedAuth && <span className="max-[950px]:hidden">Войти</span>}
       </Link>
     );
   }

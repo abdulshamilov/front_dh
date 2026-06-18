@@ -39,6 +39,7 @@ export function FilterBar({
 
   return (
     <section id="catalog">
+      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
       <div
         style={{
           display: "flex",
@@ -118,6 +119,7 @@ export function FilterBar({
             </button>
           );
         })}
+      </div>
       </div>
 
       {/* Modal-only FiltersPanel — opened via "open-filters" CustomEvent

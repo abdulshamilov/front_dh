@@ -9,6 +9,7 @@ import { Header } from "@/app/components/Header";
 import { BottomBar } from "@/app/components/BottomBar";
 import { AuthChecker } from "@/app/components/AuthChecker";
 import { ToastProvider } from "@/app/components/shared/Toast";
+import { AIAssistantFAB } from "@/app/components/AIAssistantFAB";
 import { Suspense } from "react";
 
 const AA_Stetica_Bold = localFont({
@@ -77,10 +78,16 @@ export default function RootLayout({
                 <Header />
               </Suspense>
               <Suspense>
-                <main className="flex-1">{children}</main>
+                <main
+                  className="flex-1"
+                  style={{ paddingBottom: "calc(56px + env(safe-area-inset-bottom, 0px))" }}
+                >{children}</main>
               </Suspense>
               <Footer />
               <BottomBar />
+              <Suspense fallback={null}>
+                <AIAssistantFAB />
+              </Suspense>
             </ToastProvider>
           </body>
         </ThemeProvider>

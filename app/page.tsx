@@ -171,23 +171,6 @@ function HomeContent() {
     updateFilters({});
   }, [updateFilters]);
 
-  // Прямая мутация DOM — без React-ре-рендера, мгновенная реакция.
-  // placeholder держит 60px в потоке, barWrapRef переключается в fixed.
-  const placeholderRef = useRef<HTMLDivElement>(null);
-  const barWrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const FIXED = "position:fixed;top:0;left:0;right:0;z-index:200;background:var(--home-bg);padding:10px 0;will-change:transform";
-    const NORMAL = "padding:10px 0";
-    const check = () => {
-      if (!placeholderRef.current || !barWrapRef.current) return;
-      const pinned = placeholderRef.current.getBoundingClientRect().top <= 0;
-      barWrapRef.current.style.cssText = pinned ? FIXED : NORMAL;
-    };
-    window.addEventListener("scroll", check, { passive: true });
-    check();
-    return () => window.removeEventListener("scroll", check);
-  }, []);
 
   return (
     <>
@@ -198,16 +181,13 @@ function HomeContent() {
         </div>
       </div>
 
-      {/* placeholder держит место в потоке, barWrapRef мутируется напрямую */}
-      <div ref={placeholderRef} style={{ height: 60 }}>
-        <div ref={barWrapRef} style={{ padding: "10px 0" }}>
-          <FilterBar
-            filters={filters}
-            onFiltersChange={updateFilters}
-            sortKey={sortKey}
-            onSortChange={setSortKey}
-          />
-        </div>
+      <div style={{ padding: "10px 0" }}>
+        <FilterBar
+          filters={filters}
+          onFiltersChange={updateFilters}
+          sortKey={sortKey}
+          onSortChange={setSortKey}
+        />
       </div>
 
       {/* Rest of page content */}

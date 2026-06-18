@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
 import { fetchFavoritesCount } from "@/app/shared/redux/slices/cards";
 
@@ -11,15 +11,11 @@ const HIDDEN_PATHS = ["/login", "/register", "/forgot", "/chat", "/map"];
 export function BottomBar() {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
+  const navRef = useRef<HTMLElement>(null);
 
-  // Real total favorites count, fetched globally so the badge is correct
-  // regardless of which page is open.
   const favoritesCount = useAppSelector((state) => state.cards.favoritesCount);
   const isAuth = useAppSelector((state) => state.auth.isAuth);
 
-  // Load the real favorites total on mount and whenever auth changes.
-  // Skip when unauthenticated: the endpoint requires a token (401),
-  // and the count stays 0.
   useEffect(() => {
     if (isAuth) {
       dispatch(fetchFavoritesCount());
@@ -30,6 +26,27 @@ export function BottomBar() {
     () => HIDDEN_PATHS.some((p) => pathname.startsWith(p)),
     [pathname]
   );
+
+  // Keep the bar pinned to the bottom of the VISUAL viewport.
+  // On iOS Safari the bottom URL bar shrinks the visual viewport without
+  // updating window.innerHeight, so position:fixed bottom:0 ends up
+  // behind the browser chrome. visualViewport tracks the real visible area.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav || typeof window === "undefined" || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const update = () => {
+      const hiddenBelow = Math.max(0, window.innerHeight - (vv.offsetTop + vv.height));
+      nav.style.bottom = hiddenBelow ? `${hiddenBelow}px` : "";
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   if (shouldHide) return null;
 
@@ -42,48 +59,21 @@ export function BottomBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 flex lg:hidden justify-center"
+      ref={navRef}
+      className="fixed bottom-0 left-0 right-0 z-50 flex lg:hidden"
       aria-label="Bottom navigation"
-      style={{
-        // Reserve home-indicator space below the bar on iOS so the visual
-        // 56px main bar + 32px FAB pull never sit under the indicator.
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
-      }}
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      {/* Solid background that fills the safe-area zone underneath the bar.
-          Without this, the home-indicator zone shows page content through. */}
+      {/* fills home-indicator zone */}
       <div
         className="absolute inset-x-0 bottom-0 pointer-events-none"
-        style={{
-          height: "env(safe-area-inset-bottom, 0px)",
-          background: "var(--nav-bg)",
-        }}
-      />
-      {/* Glow layer behind bar — sits ABOVE the safe-area solid-fill so
-          its blue tint never bleeds into the home-indicator zone. The
-          solid fill below stays pure black under the indicator. */}
-      <div
-        className="absolute inset-x-0 pointer-events-none"
-        style={{
-          bottom: "env(safe-area-inset-bottom, 0px)",
-          height: "58px",
-          background:
-            "linear-gradient(to top, rgba(7,103,215,0.3) 0%, rgba(0,85,255,0.1) 40%, transparent 100%)",
-          filter: "blur(8px)",
-          borderRadius: "20px 20px 0 0",
-        }}
+        style={{ height: "env(safe-area-inset-bottom, 0px)", background: "var(--nav-bg)" }}
       />
 
       {/* Main bar */}
       <div
-        className="relative w-full max-w-[500px] h-[56px] flex items-center justify-around px-2"
-        style={{
-          background: "var(--nav-bg)",
-          borderRadius: "20px 20px 0 0",
-          borderTop: "1px solid rgba(255,255,255,0.15)",
-          borderLeft: "1px solid rgba(255,255,255,0.05)",
-          borderRight: "1px solid rgba(255,255,255,0.05)",
-        }}
+        className="relative w-full h-[56px] flex items-center justify-around px-2"
+        style={{ background: "var(--nav-bg)", borderTop: "1px solid rgba(255,255,255,0.15)" }}
       >
         {/* Home */}
         <Link href="/" className="flex items-center justify-center w-12 h-12 press-scale-sm" aria-label="Главная">
@@ -99,7 +89,7 @@ export function BottomBar() {
           </svg>
         </Link>
 
-        {/* Sale / Discounts (slot 2) */}
+        {/* Sale */}
         <Link href="/sale" className="flex items-center justify-center w-12 h-12 press-scale-sm" aria-label="Акции">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <rect x="3" y="3" width="18" height="18" rx="4" fill={isActive("/sale") ? "#0055FF" : "#8E8F91"} />
@@ -109,36 +99,21 @@ export function BottomBar() {
           </svg>
         </Link>
 
-        {/* FAB — Map (center, primary discovery action) */}
+        {/* FAB — Map */}
         <Link href="/map" className="relative flex items-center justify-center -mt-8" aria-label="Карта объектов">
-          {/* Pulse rings (Siri-style) */}
           <span className="absolute w-[56px] h-[56px] rounded-full fab-pulse-ring" style={{ animationDelay: "0ms" }} />
           <span className="absolute w-[56px] h-[56px] rounded-full fab-pulse-ring" style={{ animationDelay: "600ms" }} />
           <span className="absolute w-[56px] h-[56px] rounded-full fab-pulse-ring" style={{ animationDelay: "1200ms" }} />
 
-          {/* Soft glow */}
           <span
             className="absolute w-[68px] h-[68px] rounded-full pointer-events-none"
-            style={{
-              background: "radial-gradient(circle, rgba(7,103,215,0.15) 0%, rgba(7,103,215,0.05) 60%, transparent 100%)",
-            }}
+            style={{ background: "radial-gradient(circle, rgba(7,103,215,0.15) 0%, rgba(7,103,215,0.05) 60%, transparent 100%)" }}
           />
 
-          {/* Glassmorphism blur */}
-          <span
-            className="absolute w-[72px] h-[72px] rounded-full pointer-events-none"
-            style={{
-              background: "radial-gradient(circle, rgba(7,103,215,0.6) 0%, rgba(0,85,255,0.4) 40%, rgba(0,198,255,0.2) 100%)",
-              filter: "blur(20px)",
-            }}
-          />
-
-          {/* FAB button */}
           <span
             className="relative w-[56px] h-[56px] rounded-full flex items-center justify-center"
             style={{ background: "#0767D7", boxShadow: "0 4px 20px rgba(7,103,215,0.4)" }}
           >
-            {/* Map pin icon */}
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
               <path d="M12 2C7.58 2 4 5.58 4 10c0 7 8 12 8 12s8-5 8-12c0-4.42-3.58-8-8-8z" fill="white" />
               <circle cx="12" cy="10" r="3" fill="#0767D7" />
@@ -146,15 +121,11 @@ export function BottomBar() {
           </span>
         </Link>
 
-        {/* Favorites (slot 4) */}
+        {/* Favorites */}
         <Link
           href="/favorite"
           className="relative flex items-center justify-center w-12 h-12 press-scale-sm"
-          aria-label={
-            favoritesCount > 0
-              ? `Избранное, ${favoritesCount}`
-              : "Избранное"
-          }
+          aria-label={favoritesCount > 0 ? `Избранное, ${favoritesCount}` : "Избранное"}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path

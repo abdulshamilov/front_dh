@@ -550,3 +550,14 @@ body.modal-open {
     opacity: 0;
   }
 }
+
+
+/* AI assistant FAB: above bottom bar on mobile, standard offset on desktop */
+.ai-fab-bottom {
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 16px);
+}
+@media (min-width: 1024px) {
+  .ai-fab-bottom {
+    bottom: 32px;
+  }
+}

@@ -88,8 +88,7 @@ export function MapTopBar({
         style={{
           position: "absolute",
           top: 72,
-          left: "50%",
-          transform: "translateX(-50%)",
+          left: 16,
           zIndex: 20,
           display: "flex",
           gap: 8,
