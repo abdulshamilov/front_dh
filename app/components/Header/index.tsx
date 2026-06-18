@@ -301,12 +301,6 @@ export const Header = () => {
             </div>
           )}
 
-          {/* 4) AI-плашка */}
-          {isHome && (
-            <div>
-              <AiBanner totalCount={totalCount} />
-            </div>
-          )}
         </div>
       </div>
 
@@ -352,11 +346,6 @@ export const Header = () => {
             <SearchBar focused={searchFocused} onFocusChange={setSearchFocused} height={52} />
           )}
 
-          {isHome && (
-            <div>
-              <AiBanner totalCount={totalCount} />
-            </div>
-          )}
         </div>
       </header>
     </>

@@ -3,12 +3,12 @@
 export type TabKey = "description" | "specifications" | "documents" | "map" | "reviews" | "questions";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "reviews",        label: "Отзывы" },
-  { key: "questions",      label: "Вопросы" },
   { key: "description",    label: "Описание" },
   { key: "specifications", label: "Характеристики" },
   { key: "documents",      label: "Документы" },
   { key: "map",            label: "Карта" },
+  { key: "reviews",        label: "Отзывы" },
+  { key: "questions",      label: "Вопросы" },
 ];
 
 export function UnderlineTabs({
