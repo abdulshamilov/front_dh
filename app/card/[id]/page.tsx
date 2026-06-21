@@ -23,8 +23,7 @@ import { CharacteristicsSectionApp } from "./lib/CharacteristicsSectionApp";
 import { DocumentsSectionApp } from "./lib/DocumentsSectionApp";
 import { MapPreviewApp } from "./lib/MapPreviewApp";
 import { BottomCtaApp } from "./lib/BottomCtaApp";
-import { ReviewsSection } from "./lib/ReviewsSection";
-import { QuestionsSection } from "./lib/QuestionsSection";
+import { PricingSection } from "./lib/PricingSection";
 
 /**
  * /card/[id] — pixel-perfect web port of the mobile app's
@@ -185,8 +184,7 @@ function CardDetailV2Loaded({
           <DocumentsSectionApp documents={card.documents} />
         )}
         {tab === "map" && <MapPreviewApp card={card} />}
-        {tab === "reviews" && <ReviewsSection cardId={card.id} />}
-        {tab === "questions" && <QuestionsSection cardId={card.id} initialQuestions={card.questions} />}
+        {tab === "pricing" && <PricingSection cardId={card.id} />}
         <div style={{ paddingTop: 21 }}>
           <SimilarListings card={card} />
         </div>
@@ -249,8 +247,7 @@ function CardDetailV2Loaded({
                     <DocumentsSectionApp documents={card.documents} />
                   )}
                   {tab === "map" && <MapPreviewApp card={card} />}
-                  {tab === "reviews" && <ReviewsSection cardId={card.id} />}
-                  {tab === "questions" && <QuestionsSection cardId={card.id} />}
+                  {tab === "pricing" && <PricingSection cardId={card.id} />}
                 </div>
               </div>
 

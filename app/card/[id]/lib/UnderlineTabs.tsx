@@ -1,14 +1,13 @@
 "use client";
 
-export type TabKey = "description" | "specifications" | "documents" | "map" | "reviews" | "questions";
+export type TabKey = "description" | "specifications" | "documents" | "map" | "pricing";
 
-const TABS: { key: TabKey; label: string }[] = [
+const TABS: { key: TabKey; label: string; highlight?: boolean }[] = [
   { key: "description",    label: "Описание" },
   { key: "specifications", label: "Характеристики" },
+  { key: "pricing",        label: "Рассрочка", highlight: true },
   { key: "documents",      label: "Документы" },
   { key: "map",            label: "Карта" },
-  { key: "reviews",        label: "Отзывы" },
-  { key: "questions",      label: "Вопросы" },
 ];
 
 export function UnderlineTabs({
@@ -22,6 +21,7 @@ export function UnderlineTabs({
     <div style={{ padding: "12px 16px 8px", display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none" }}>
       {TABS.map((tab) => {
         const on = active === tab.key;
+        const isHighlight = tab.highlight && !on;
         return (
           <button
             key={tab.key}
@@ -30,18 +30,28 @@ export function UnderlineTabs({
             style={{
               padding: "10px 18px",
               borderRadius: 12,
-              border: on ? "1.5px solid rgba(0,117,255,0.7)" : "1.5px solid rgba(255,255,255,0.15)",
+              border: on
+                ? "1.5px solid rgba(0,117,255,0.7)"
+                : isHighlight
+                  ? "1.5px solid rgba(255,160,0,0.6)"
+                  : "1.5px solid rgba(255,255,255,0.15)",
               background: on
                 ? "linear-gradient(135deg, #0075FF 0%, #0056CC 100%)"
-                : "rgba(255,255,255,0.07)",
-              color: on ? "#FFFFFF" : "rgba(255,255,255,0.65)",
+                : isHighlight
+                  ? "linear-gradient(135deg, rgba(255,160,0,0.18) 0%, rgba(255,100,0,0.10) 100%)"
+                  : "rgba(255,255,255,0.07)",
+              color: on ? "#FFFFFF" : isHighlight ? "#FFA000" : "rgba(255,255,255,0.65)",
               fontSize: 13,
               fontFamily: "var(--font-stetica-bold)",
               cursor: "pointer",
               whiteSpace: "nowrap",
               flexShrink: 0,
               transition: "all 0.15s",
-              boxShadow: on ? "0 4px 16px rgba(0,117,255,0.35)" : "none",
+              boxShadow: on
+                ? "0 4px 16px rgba(0,117,255,0.35)"
+                : isHighlight
+                  ? "0 2px 12px rgba(255,140,0,0.25)"
+                  : "none",
               letterSpacing: "0.01em",
             }}
           >

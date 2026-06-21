@@ -70,6 +70,68 @@ export interface IReview {
   developer_response?: IDeveloperResponse;
 }
 
+export interface ICashOption {
+  id: number;
+  price_per_sqm: string;
+  total_price: string;
+  accepts_mat_capital: boolean;
+  mat_capital_note: string;
+  note: string;
+  extra_conditions: string;
+  valid_from: string;
+  valid_until: string;
+}
+
+export interface IInstallmentOption {
+  id: number;
+  apartment_type: string;
+  term_months: number;
+  price_per_sqm: string;
+  total_price: string;
+  down_payment_type: "percent" | "amount";
+  down_payment_percent: string;
+  down_payment_min_amount: string;
+  down_payment: string;
+  monthly_payment: string;
+  accepts_mat_capital: boolean;
+  mat_capital_note: string;
+  note: string;
+  extra_conditions: string;
+  valid_from: string;
+  valid_until: string;
+}
+
+export interface IPromotion {
+  id: number;
+  type: string;
+  title: string;
+  description: string;
+  valid_from: string;
+  valid_until: string;
+}
+
+export interface ICardPricing {
+  card_id: number;
+  prices_on_request: boolean;
+  accepts_car_barter: boolean;
+  accepts_land_barter: boolean;
+  cash_option: ICashOption | null;
+  installment_options: IInstallmentOption[];
+  promotions: IPromotion[];
+}
+
+export interface IInstallmentMatch {
+  plan_id: number;
+  price_per_sqm: string;
+  total_price: string;
+  down_payment: string;
+  down_payment_from: string;
+  down_payment_to: string;
+  monthly_payment: string;
+  term_months: number;
+  max_term_months: number;
+}
+
 export interface ICard {
   id: number;
   title: string;
