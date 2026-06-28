@@ -22,6 +22,8 @@ interface ListingsGridProps {
   hideEmpty?: boolean;
   /** Show WhatsApp CTA on each card. Used on /favorite. */
   showWhatsapp?: boolean;
+  /** Show installment badge on each card. Used on /sale installment tab. */
+  showInstallmentBadge?: boolean;
 }
 
 export function ListingsGrid({
@@ -35,6 +37,7 @@ export function ListingsGrid({
   emptyTitle,
   hideEmpty,
   showWhatsapp,
+  showInstallmentBadge,
 }: ListingsGridProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -158,7 +161,7 @@ export function ListingsGrid({
     <div>
       <div className="listings-grid">
         {visibleCards.map((c) => (
-          <PropertyCard key={c.id} card={c} showWhatsapp={showWhatsapp} />
+          <PropertyCard key={c.id} card={c} showWhatsapp={showWhatsapp} showInstallmentBadge={showInstallmentBadge} />
         ))}
         {loading &&
           Array.from({ length: 6 }).map((_, i) => (

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
-import { Heart, MapPin } from "lucide-react";
+import { Heart, MapPin, Box } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
 import {
   toggleFavorite,
@@ -81,9 +81,11 @@ interface PropertyCardProps {
   variant?: "default" | "popular";
   /** Показывать ли WhatsApp-кнопку под адресом (для /favorite). По умолчанию false. */
   showWhatsapp?: boolean;
+  /** Показывать бейдж «РАССРОЧКА» на фото (для страницы акций). */
+  showInstallmentBadge?: boolean;
 }
 
-function PropertyCardImpl({ card, variant = "default", showWhatsapp = false }: PropertyCardProps) {
+function PropertyCardImpl({ card, variant = "default", showWhatsapp = false, showInstallmentBadge = false }: PropertyCardProps) {
   const dispatch = useAppDispatch();
   const { isAuth } = useAppSelector((state) => state.auth);
   const [showHeart, setShowHeart] = useState(false);
@@ -294,6 +296,44 @@ function PropertyCardImpl({ card, variant = "default", showWhatsapp = false }: P
           />
         </button>
 
+        {/* Installment badge — top-left */}
+        {showInstallmentBadge && (
+          <div style={{ position: "absolute", top: 12, left: 12, zIndex: 10 }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center",
+              padding: "4px 10px", borderRadius: 8,
+              background: "rgba(0,117,255,0.85)",
+              backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+              fontFamily: "var(--font-inter), system-ui, sans-serif",
+              fontWeight: 700, fontSize: 11,
+              letterSpacing: "0.04em", textTransform: "uppercase",
+              color: "#fff",
+            }}>
+              Рассрочка
+            </span>
+          </div>
+        )}
+
+        {/* 3D badge — top-left (below installment if both present) */}
+        {card.has_3d_model && !showInstallmentBadge && (
+          <div style={{ position: "absolute", top: 12, left: 12, zIndex: 10 }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              padding: "4px 10px", borderRadius: 8,
+              background: "rgba(10,10,12,0.70)",
+              backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              fontFamily: "var(--font-inter), system-ui, sans-serif",
+              fontWeight: 700, fontSize: 11,
+              letterSpacing: "0.04em", textTransform: "uppercase",
+              color: "#fff",
+            }}>
+              <Box size={11} />
+              3D
+            </span>
+          </div>
+        )}
+
         {/* Status pill — bottom-left */}
         {tag && (
           <div style={{ position: "absolute", bottom: 12, left: 12 }}>
@@ -485,8 +525,9 @@ export const PropertyCard = memo(PropertyCardImpl, (prev, next) => {
     prev.card.address === next.card.address &&
     prev.card.rating === next.card.rating &&
     prev.card.rating_count === next.card.rating_count &&
-    prev.variant === next.variant &&
-    prev.showWhatsapp === next.showWhatsapp
+    prev.card.has_3d_model === next.card.has_3d_model &&
+    prev.showWhatsapp === next.showWhatsapp &&
+    prev.showInstallmentBadge === next.showInstallmentBadge
   );
 });
 

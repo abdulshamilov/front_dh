@@ -184,4 +184,12 @@ export interface ICard {
   /** URL of the floor-plan image. When present, the "Планировка" tab is shown
    *  on the detail page; when absent, the tab is hidden entirely. */
   floor_plan_image?: string;
+  /** Whether this listing has a 3D model available. */
+  has_3d_model?: boolean;
+  /** Absolute URL to the .glb 3D model file. */
+  model_3d_glb?: string | null;
+  /** Absolute URL to the .usdz 3D model file for iOS AR. Optional. */
+  model_3d_usdz?: string | null;
+  /** Absolute URL to a poster image shown while the 3D model loads. */
+  model_3d_poster?: string | null;
 }

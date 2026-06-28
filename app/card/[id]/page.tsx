@@ -24,6 +24,7 @@ import { DocumentsSectionApp } from "./lib/DocumentsSectionApp";
 import { MapPreviewApp } from "./lib/MapPreviewApp";
 import { BottomCtaApp } from "./lib/BottomCtaApp";
 import { PricingSection } from "./lib/PricingSection";
+import Apartment3DViewer from "./lib/Apartment3DViewer";
 
 /**
  * /card/[id] — pixel-perfect web port of the mobile app's
@@ -169,6 +170,29 @@ function CardDetailV2Loaded({
           onShare={actions.share}
           onBack={onBack}
         />
+        {card.has_3d_model && card.model_3d_glb && (
+          <div style={{ padding: '16px 16px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 18,
+                  fontFamily: 'var(--font-stetica-bold)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                3D-просмотр планировки
+              </p>
+            </div>
+            <Apartment3DViewer
+              glbUrl={card.model_3d_glb}
+              usdzUrl={card.model_3d_usdz}
+              posterUrl={card.model_3d_poster}
+              alt={`3D-модель планировки: ${card.title}`}
+              apartmentId={card.id}
+            />
+          </div>
+        )}
         <PriceTitleSection card={card} onRatingClick={undefined} />
         <div style={{ paddingLeft: 16, paddingRight: 16 }}>
           <DeveloperCardApp card={card} />
@@ -210,6 +234,41 @@ function CardDetailV2Loaded({
                   aspectRatio="16 / 9"
                 />
               </div>
+
+              {/* 3D-просмотр (если есть модель) */}
+              {card.has_3d_model && card.model_3d_glb && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 20,
+                        fontFamily: 'var(--font-stetica-bold)',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      3D-просмотр планировки
+                    </p>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 12,
+                        fontFamily: 'var(--font-stetica-medium)',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      Покрутите модель чтобы рассмотреть со всех сторон
+                    </p>
+                  </div>
+                  <Apartment3DViewer
+                    glbUrl={card.model_3d_glb}
+                    usdzUrl={card.model_3d_usdz}
+                    posterUrl={card.model_3d_poster}
+                    alt={`3D-модель планировки: ${card.title}`}
+                    apartmentId={card.id}
+                  />
+                </div>
+              )}
 
               {/* Цена, заголовок, адрес, чипы */}
               <div

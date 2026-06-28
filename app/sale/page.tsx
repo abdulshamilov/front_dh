@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   Tag,
   Sparkles,
@@ -17,12 +17,10 @@ import { PageHero } from "../components/shared/PageHero";
 import { EmptyState } from "../components/shared/EmptyState";
 import { Chip } from "../components/shared/Chip";
 import { Button } from "../components/shared/Button";
-import { LeadCard } from "../components/shared/LeadCard";
 import { fetchCards, resetPagination } from "../shared/redux/slices/cards";
 import { useAppDispatch, useAppSelector } from "../shared/redux/hooks";
 import { pluralRu } from "../shared/utils/plural";
-import { buildWhatsappLink } from "../shared/utils/contacts";
-import { MessageCircle } from "lucide-react";
+import axiosInstance from "../shared/config/axios";
 
 type FilterTab = "all" | "discount" | "installment";
 type SortKey = "newest" | "discount_size" | "price_asc" | "price_desc";
@@ -56,22 +54,23 @@ export default function SalePage() {
   );
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [sortBy, setSortBy] = useState<SortKey>("newest");
+  // IDs карточек у которых реально есть installment_options (флаг в списке не проставлен бэком)
+  const [installmentIds, setInstallmentIds] = useState<Set<number> | null>(null);
+  const checkedRef = useRef(false);
 
-  const fetchData = useCallback(() => {
+  const fetchData = () => {
     dispatch(resetPagination());
     dispatch(fetchCards({ page: 1, category: "new_building" }));
-  }, [dispatch]);
+  };
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(fetchData, [dispatch]); // dispatch из RTK стабилен — эффект выполнится один раз
 
   // Защита: показываем карточки только когда state точно про каталог.
   // В отличие от /favorite — здесь fetchData делает resetPagination() (sync),
   // так что isFavoritesPage уже false к рендеру. Гард на ListingsGrid даёт
   // дополнительную страховку, но не gates всю цепочку фильтрации.
   const isCatalog = isFavoritesPage !== true;
-  const allCards = cards ?? [];
+  const allCards = useMemo(() => cards ?? [], [cards]);
 
   // Filter
   const filteredCards = useMemo(() => {
@@ -80,10 +79,13 @@ export default function SalePage() {
       return allCards.filter((c) => c.old_price && c.old_price > c.price_metr);
     }
     if (activeTab === "installment") {
+      // Если уже проверили payment-options — фильтруем по реальным данным
+      if (installmentIds !== null) return allCards.filter((c) => installmentIds.has(c.id));
+      // Пока идёт проверка — фильтруем по флагу (может быть пусто, это ок)
       return allCards.filter((c) => c.installment);
     }
     return allCards;
-  }, [allCards, activeTab]);
+  }, [allCards, activeTab, installmentIds]);
 
   // Sort
   const sortedCards = useMemo(() => {
@@ -111,7 +113,7 @@ export default function SalePage() {
       (c) => c.old_price && c.old_price > c.price_metr
     ).length;
     if (activeTab === "all" && discountCount > 0) {
-      const maxDiscount = Math.max(...allCards.map(calcDiscount));
+      const maxDiscount = allCards.reduce((m, c) => Math.max(m, calcDiscount(c)), 0);
       return `${discountCount} ${pluralRu(discountCount, ["акция", "акции", "акций"])} · до -${maxDiscount}%`;
     }
     if (filteredCards.length > 0) {
@@ -121,10 +123,31 @@ export default function SalePage() {
     return undefined;
   }, [loading, allCards, filteredCards, activeTab]);
 
-  const handleResetFilters = useCallback(() => {
+  // При первом переключении на таб "Рассрочка" — проверяем payment-options всех карточек
+  useEffect(() => {
+    if (activeTab !== "installment" || allCards.length === 0 || checkedRef.current) return;
+    checkedRef.current = true;
+
+    Promise.allSettled(
+      allCards.map((c) =>
+        axiosInstance
+          .get(`/cards/${c.id}/payment-options/`)
+          .then((r) => ({ id: c.id, hasInstallment: (r.data?.installment_options?.length ?? 0) > 0 }))
+          .catch(() => ({ id: c.id, hasInstallment: false }))
+      )
+    ).then((results) => {
+      const ids = new Set<number>();
+      results.forEach((r) => {
+        if (r.status === "fulfilled" && r.value.hasInstallment) ids.add(r.value.id);
+      });
+      setInstallmentIds(ids);
+    });
+  }, [activeTab, allCards]);
+
+  const handleResetFilters = () => {
     setActiveTab("all");
     setSortBy("newest");
-  }, []);
+  };
 
   const showFilteredEmpty =
     !loading &&
@@ -133,8 +156,7 @@ export default function SalePage() {
     filteredCards.length === 0;
 
   // Catalog-empty взаимоисключает filtered-empty — никогда не покажем оба
-  const showCatalogEmpty =
-    !loading && !error && allCards.length === 0 && !showFilteredEmpty;
+  const showCatalogEmpty = !loading && !error && allCards.length === 0;
 
   return (
     <div
@@ -228,26 +250,6 @@ export default function SalePage() {
           )}
         </section>
 
-        {/* Lead card — консультация через WhatsApp.
-            Отдельное действие от AiBanner внизу (тот ведёт на AI-чат),
-            здесь — живой менеджер по конкретной акции. */}
-        {!loading && !error && allCards.length > 0 && !showFilteredEmpty && (
-          <LeadCard
-            tone="success"
-            icon={<MessageCircle size={20} strokeWidth={2.4} />}
-            title="Узнайте детали акции"
-            description="Менеджер расскажет об условиях скидок и рассрочки в WhatsApp"
-            cta="Написать в WhatsApp"
-            onClick={() => {
-              if (typeof window === "undefined") return;
-              const url = buildWhatsappLink(
-                "Здравствуйте! Расскажите про активные акции в Dream House"
-              );
-              window.open(url, "_blank", "noopener,noreferrer");
-            }}
-          />
-        )}
-
         {/* Error */}
         {error && !loading && (
           <div
@@ -325,6 +327,7 @@ export default function SalePage() {
             onLoadMore={() => {}}
             hideEmpty
             showWhatsapp
+            showInstallmentBadge={activeTab === "installment"}
           />
         )}
 

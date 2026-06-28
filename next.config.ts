@@ -1,6 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    // In local dev, model-viewer fetches GLB files via absolute prod URLs
+    // which triggers CORS. Proxy /media/ through the dev server to avoid it.
+    if (process.env.NODE_ENV !== "production") {
+      return [
+        {
+          source: "/media/:path*",
+          destination: "https://api.dreamhouse05.com/media/:path*",
+        },
+      ];
+    }
+    return [];
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
