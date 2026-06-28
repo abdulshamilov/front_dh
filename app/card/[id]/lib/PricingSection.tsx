@@ -5,18 +5,21 @@ import axiosInstance from "@/app/shared/config/axios";
 import type { ICardPricing, IInstallmentMatch } from "@/app/types/models";
 import { formatPrice } from "@/app/card/[id]/lib";
 
+const BLUE = "#0075FF";
+const BLUE_DIM = "rgba(0,117,255,0.7)";
+
 function Row({ label, value, faded }: { label: string; value: React.ReactNode; faded?: boolean }) {
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
       padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.07)",
     }}>
-      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-stetica-medium)" }}>
+      <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-stetica-medium)" }}>
         {label}
       </span>
       <span style={{
         fontSize: 13, fontFamily: "var(--font-stetica-bold)", textAlign: "right", maxWidth: "55%",
-        color: faded ? "rgba(255,255,255,0.3)" : "var(--text-primary)",
+        color: faded ? "rgba(255,255,255,0.25)" : "#FFFFFF",
         transition: "color 0.15s",
       }}>
         {value}
@@ -25,7 +28,6 @@ function Row({ label, value, faded }: { label: string; value: React.ReactNode; f
   );
 }
 
-/** Слайдер с полем ввода. Набранное значение применяется по blur/Enter и зажимается в [min, max]. */
 function InputSlider({
   label,
   value,
@@ -47,11 +49,14 @@ function InputSlider({
   unit: string;
   onValueChange: (v: number) => void;
 }) {
-  const [display, setDisplay] = useState(String(value));
+  const fmt = (n: number) =>
+    unit === "мес." ? String(n) : new Intl.NumberFormat("ru-RU").format(n);
 
-  // синхронизируем поле если значение изменилось снаружи (слайдер)
+  const [display, setDisplay] = useState(fmt(value));
+
   useEffect(() => {
-    setDisplay(String(value));
+    setDisplay(fmt(value));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const clamp = (n: number) => Math.max(min, Math.min(max, n));
@@ -59,12 +64,11 @@ function InputSlider({
   const commit = (raw: string) => {
     const n = parseInt(raw.replace(/\D/g, ""), 10);
     const clamped = isNaN(n) ? min : clamp(n);
-    setDisplay(String(clamped));
+    setDisplay(fmt(clamped));
     onValueChange(clamped);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // разрешаем свободный ввод во время набора
     setDisplay(e.target.value);
   };
 
@@ -78,7 +82,7 @@ function InputSlider({
 
   const handleSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
-    setDisplay(String(v));
+    setDisplay(fmt(v));
     onValueChange(v);
   };
 
@@ -87,12 +91,13 @@ function InputSlider({
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-stetica-medium)" }}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-stetica-medium)" }}>
           {label}
         </span>
+        {/* Поле ввода — нейтральный инпут */}
         <div style={{
           display: "flex", alignItems: "center", gap: 4,
-          background: "rgba(255,160,0,0.12)", border: "1px solid rgba(255,160,0,0.25)",
+          background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
           borderRadius: 8, padding: "3px 10px",
         }}>
           <input
@@ -104,13 +109,13 @@ function InputSlider({
             onKeyDown={handleKeyDown}
             style={{
               background: "transparent", border: "none", outline: "none",
-              color: "#FFA000", fontFamily: "var(--font-stetica-bold)", fontSize: 13,
+              color: "#FFFFFF", fontFamily: "var(--font-stetica-bold)", fontSize: 13,
               width: unit === "мес." ? 36 : 80,
               textAlign: "right",
               padding: 0,
             }}
           />
-          <span style={{ color: "#FFA000", fontFamily: "var(--font-stetica-bold)", fontSize: 13, flexShrink: 0 }}>
+          <span style={{ color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-stetica-bold)", fontSize: 13, flexShrink: 0 }}>
             {unit}
           </span>
         </div>
@@ -123,7 +128,7 @@ function InputSlider({
         }} />
         <div style={{
           position: "absolute", left: 0, height: 4,
-          borderRadius: 2, background: "linear-gradient(90deg, #FF6000, #FFA000)",
+          borderRadius: 2, background: "rgba(255,255,255,0.25)",
           width: `${pct}%`, transition: "width 0.04s",
           pointerEvents: "none",
         }} />
@@ -242,27 +247,25 @@ export function PricingSection({ cardId }: { cardId: number }) {
   const opt = options.installment_options?.[0];
   if (!opt) return <PricingEmpty />;
 
-  const monthly  = calc ? calc.monthly_payment  : String(opt.monthly_payment);
-  const total    = calc ? calc.total_price       : String(opt.total_price);
-  const down     = calc ? calc.down_payment      : String(opt.down_payment_min_amount);
-  const perSqm   = calc ? calc.price_per_sqm     : String(opt.price_per_sqm);
-  const downFrom = calc?.down_payment_from;
-  const downTo   = calc?.down_payment_to;
+  const monthly = calc ? calc.monthly_payment : String(opt.monthly_payment);
+  const total   = calc ? calc.total_price      : String(opt.total_price);
+  const down    = calc ? calc.down_payment     : String(opt.down_payment_min_amount);
+  const perSqm  = calc ? calc.price_per_sqm    : String(opt.price_per_sqm);
 
   return (
     <div style={{ padding: "16px 16px 32px" }}>
       <div style={{
         borderRadius: 20, overflow: "hidden",
-        background: "linear-gradient(145deg, rgba(255,140,0,0.11) 0%, rgba(255,80,0,0.05) 100%)",
-        border: "1.5px solid rgba(255,140,0,0.32)",
-        boxShadow: "0 4px 28px rgba(255,120,0,0.14)",
+        background: "rgba(255,255,255,0.04)",
+        border: `1.5px solid ${BLUE_DIM}`,
+        boxShadow: `0 4px 24px rgba(0,117,255,0.12)`,
       }}>
 
         {/* Hero */}
         <div style={{ padding: "22px 18px 18px" }}>
           <div style={{
             fontSize: 10, fontFamily: "var(--font-stetica-bold)",
-            color: "rgba(255,165,0,0.65)", textTransform: "uppercase",
+            color: "rgba(255,255,255,0.45)", textTransform: "uppercase",
             letterSpacing: "0.1em", marginBottom: 8,
           }}>
             Ежемесячный платёж
@@ -272,7 +275,7 @@ export function PricingSection({ cardId }: { cardId: number }) {
             color: calcLoading ? "rgba(255,160,0,0.3)" : "#FFA000",
             transition: "color 0.15s",
           }}>
-            {formatPrice(monthly)} ₽
+            {formatPrice(Math.round(Number(monthly)))} ₽
           </div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 5, fontFamily: "var(--font-stetica-medium)" }}>
             в месяц · {termVal} мес.
@@ -292,40 +295,30 @@ export function PricingSection({ cardId }: { cardId: number }) {
             unit="мес."
             onValueChange={handleTerm}
           />
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <InputSlider
-              label="Первоначальный взнос"
-              value={downVal}
-              min={minDown}
-              max={maxDown}
-              step={1_000}
-              minLabel={`${formatPrice(String(minDown))} ₽`}
-              maxLabel={`${formatPrice(String(maxDown))} ₽`}
-              unit="₽"
-              onValueChange={handleDown}
-            />
-            {downFrom && downTo && (
-              <div style={{
-                fontSize: 11, color: "rgba(255,165,0,0.45)",
-                fontFamily: "var(--font-stetica-medium)",
-              }}>
-                Диапазон плана: {formatPrice(downFrom)} — {formatPrice(downTo)} ₽
-              </div>
-            )}
-          </div>
+          <InputSlider
+            label="Первоначальный взнос"
+            value={downVal}
+            min={minDown}
+            max={maxDown}
+            step={1_000}
+            minLabel={`${formatPrice(String(minDown))} ₽`}
+            maxLabel={`${formatPrice(String(maxDown))} ₽`}
+            unit="₽"
+            onValueChange={handleDown}
+          />
         </div>
 
         {/* Детали */}
         <div style={{ padding: "0 18px 18px" }}>
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 2 }}>
             {Number(down) > 0 && (
-              <Row label="Первоначальный взнос" value={`${formatPrice(down)} ₽`} faded={calcLoading} />
+              <Row label="Первоначальный взнос" value={`${formatPrice(Math.round(Number(down)))} ₽`} faded={calcLoading} />
             )}
             {Number(total) > 0 && (
-              <Row label="Итоговая сумма" value={`${formatPrice(total)} ₽`} faded={calcLoading} />
+              <Row label="Итоговая сумма" value={`${formatPrice(Math.round(Number(total)))} ₽`} faded={calcLoading} />
             )}
             {Number(perSqm) > 0 && (
-              <Row label="Цена за м²" value={`${formatPrice(perSqm)} ₽`} faded={calcLoading} />
+              <Row label="Цена за м²" value={`${formatPrice(Math.round(Number(perSqm)))} ₽`} faded={calcLoading} />
             )}
           </div>
         </div>
@@ -334,22 +327,22 @@ export function PricingSection({ cardId }: { cardId: number }) {
       <style jsx>{`
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 22px;
-          height: 22px;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
-          background: #FFA000;
-          box-shadow: 0 2px 10px rgba(255,150,0,0.6);
+          background: rgba(255,255,255,0.6);
+          box-shadow: 0 1px 6px rgba(0,0,0,0.3);
           cursor: pointer;
-          border: 2px solid rgba(30,30,30,0.4);
+          border: none;
         }
         input[type="range"]::-moz-range-thumb {
-          width: 22px;
-          height: 22px;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
-          background: #FFA000;
-          box-shadow: 0 2px 10px rgba(255,150,0,0.6);
+          background: rgba(255,255,255,0.6);
+          box-shadow: 0 1px 6px rgba(0,0,0,0.3);
           cursor: pointer;
-          border: 2px solid rgba(30,30,30,0.4);
+          border: none;
         }
         input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
         input[type="range"]::-moz-range-track { background: transparent; }
@@ -386,7 +379,7 @@ function PricingEmpty() {
     }}>
       <div style={{
         width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px",
-        background: "rgba(255,140,0,0.1)", border: "1px solid rgba(255,140,0,0.2)",
+        background: "rgba(0,117,255,0.1)", border: "1px solid rgba(0,117,255,0.2)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 24,
       }}>

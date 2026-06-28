@@ -42,6 +42,10 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "Dream House",
   description: "Dream House",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 // viewport-fit=cover lets the page render under the iOS notch & home-indicator,
