@@ -12,19 +12,18 @@ type Props = {
   apartmentId?: string | number;
 };
 
-// In dev, rewrite absolute media URLs to go through Next.js proxy (/media/...)
-// so model-viewer's fetch() doesn't hit CORS. In production, URL is same-origin.
+// Convert absolute media URLs to relative paths so model-viewer's fetch()
+// goes through Next.js proxy (/media/ → api.dreamhouse05.com/media/).
+// Works in both dev (Next.js dev server) and prod (Vercel rewrite).
 function resolveMediaUrl(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      const parsed = new URL(url);
-      if (parsed.pathname.startsWith('/media/')) {
-        return parsed.pathname + parsed.search;
-      }
-    } catch {
-      // already a relative URL — fine as-is
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.startsWith('/media/')) {
+      return parsed.pathname + parsed.search;
     }
+  } catch {
+    // already a relative URL — use as-is
   }
   return url;
 }
