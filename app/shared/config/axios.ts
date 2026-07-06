@@ -83,11 +83,12 @@ config.interceptors.response.use(
       const refreshToken = localStorage.getItem("refresh_token");
 
       if (!refreshToken) {
+        // Гость (нет сессии вообще): просто отдаём ошибку вызывающему коду.
+        // Просмотр страниц доступен без регистрации; на /register ведут
+        // только сами действия (useRequireAuth).
         localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
         isRefreshing = false;
         processQueue(error, null);
-        window.location.href = "/login";
         return Promise.reject(error);
       }
 

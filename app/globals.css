@@ -23,9 +23,12 @@ input[type="color"] {
   list-style-type: none;
 }
 
-/* ===== DreamHouse Design System — Dark-first ===== */
+/* ===== DreamHouse Design System — Dark-first =====
+ * .force-dark — обёртка для экранов без светлой темы (карточка объекта):
+ * переобъявляет тёмные токены внутри поддерева, перебивая
+ * [data-theme="light"] на <html>. */
 
-:root {
+:root, .force-dark {
   /* Background & Surface */
   --bg-primary: #070707;
   --bg-secondary: #1D2024;

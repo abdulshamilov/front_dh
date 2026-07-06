@@ -9,6 +9,7 @@ import type { ICard } from "@/app/types/models";
 import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
 import { fetchCardById } from "@/app/shared/redux/slices/cards";
 import { useLeadSubmit } from "@/app/shared/hooks/useLeadSubmit";
+import { useRequireAuth } from "@/app/shared/hooks/useRequireAuth";
 import { extractDigits } from "@/app/shared/utils/phone";
 import { EmptyState } from "@/app/components/shared/EmptyState";
 import { Button } from "@/app/components/shared/Button";
@@ -73,7 +74,7 @@ export default function CardDetailV2Page() {
   if (error || !currentCard) {
     return (
       <div
-        className="flex flex-col items-center font-[family-name:var(--font-stetica-regular)]"
+        className="force-dark flex flex-col items-center font-[family-name:var(--font-stetica-regular)]"
         style={{ backgroundColor: "var(--bg-primary)", minHeight: "100dvh" }}
       >
         <div className="w-full max-w-[480px] flex flex-col gap-y-4 px-4 pt-5 pb-10 flex-grow">
@@ -160,6 +161,7 @@ function CardDetailV2Loaded({
   const [media, setMedia] = useState<"photos" | "3d">("photos");
 
   const user = useAppSelector((s) => s.auth.user);
+  const requireAuth = useRequireAuth();
   const { submit: submitLead } = useLeadSubmit({
     successMessage: "Заявка отправлена! В скором времени с вами свяжется менеджер",
   });
@@ -167,6 +169,7 @@ function CardDetailV2Loaded({
   // Авторизован и есть телефон в аккаунте → имя+номер берём из профиля и
   // отправляем заявку сразу с toast-уведомлением. Иначе — открываем форму.
   const handleRequest = useCallback(() => {
+    if (!requireAuth()) return;
     const phone = extractDigits(user?.phone_number ?? "");
     if (user && phone.length >= 10) {
       submitLead({
@@ -178,7 +181,7 @@ function CardDetailV2Loaded({
       return;
     }
     setRequestOpen(true);
-  }, [user, card.id, submitLead]);
+  }, [requireAuth, user, card.id, submitLead]);
 
   const sidebarPrice = formatPrice(card.price);
 
@@ -231,7 +234,7 @@ function CardDetailV2Loaded({
 
   return (
     <div
-      className="flex flex-col items-center font-[family-name:var(--font-stetica-medium)]"
+      className="force-dark flex flex-col items-center font-[family-name:var(--font-stetica-medium)]"
       style={{ backgroundColor: "var(--bg-primary)", minHeight: "100dvh" }}
     >
       {/* ── MOBILE: узкая колонка 480px — без изменений ── */}
@@ -385,7 +388,7 @@ function CardDetailV2Loaded({
       </div>
 
       {/* BottomCtaApp скрывается на desktop через свой CSS (@media lg display:none) */}
-      <BottomCtaApp onRequestClick={handleRequest} />
+      <BottomCtaApp onRequestClick={handleRequest} onBeforeAction={requireAuth} />
 
       <CallRequestModal
         isOpen={requestOpen}

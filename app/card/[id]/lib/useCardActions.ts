@@ -40,9 +40,12 @@ export function useCardActions(card: ICard): UseCardActions {
   }, [card.is_favorite]);
 
   // Record view history once per card load. Fire & forget — never block UI.
+  // Гостям (нет токена) историю не пишем — эндпоинт требует авторизацию.
   useEffect(() => {
     if (!card.id) return;
-    axiosInstance.post(`/cards/${card.id}/view-history/`).catch(() => {});
+    if (localStorage.getItem("access_token")) {
+      axiosInstance.post(`/cards/${card.id}/view-history/`).catch(() => {});
+    }
     // Local viewed-tracking so /map can dim pins the user already opened.
     markCardViewed(card.id);
   }, [card.id]);

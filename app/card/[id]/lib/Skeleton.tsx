@@ -9,6 +9,7 @@
 export function CardDetailV2Skeleton() {
   return (
     <div
+      className="force-dark"
       style={{
         backgroundColor: "var(--bg-primary)",
         minHeight: "100dvh",

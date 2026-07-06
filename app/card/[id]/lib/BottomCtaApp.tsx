@@ -13,6 +13,8 @@ import { SHORT_PHONE_TEL } from "@/app/shared/utils/contacts";
 
 interface BottomCtaAppProps {
   onRequestClick: () => void;
+  /** Страж перед действием (звонок/заявка): вернуть false, чтобы отменить (гость → регистрация). */
+  onBeforeAction?: () => boolean;
 }
 
 const HANDLE = 48;
@@ -40,7 +42,7 @@ function LogoMark({ size = 22 }: { size?: number }) {
   );
 }
 
-export function BottomCtaApp({ onRequestClick }: BottomCtaAppProps) {
+export function BottomCtaApp({ onRequestClick, onBeforeAction }: BottomCtaAppProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const rectLeftRef = useRef(0);
   const [maxX, setMaxX] = useState(0);
@@ -112,6 +114,11 @@ export function BottomCtaApp({ onRequestClick }: BottomCtaAppProps) {
   };
 
   const confirm = (kind: "call" | "request") => {
+    // Гость → уходим на регистрацию, плашку не гасим.
+    if (onBeforeAction && !onBeforeAction()) {
+      setX(center);
+      return;
+    }
     setConfirmed(kind);
     setX(kind === "request" ? maxX : 0);
     if (kind === "request") onRequestClick();

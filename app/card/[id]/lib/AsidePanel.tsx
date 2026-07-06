@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
 import { subscribeToDeveloper, unsubscribeFromDeveloper } from "@/app/shared/redux/slices/developers";
 import { CallRequestModal } from "@/app/components/CallRequestModal";
 import { useToast } from "@/app/components/shared/Toast";
+import { useRequireAuth } from "@/app/shared/hooks/useRequireAuth";
 import { SHORT_PHONE_TEL } from "@/app/shared/utils/contacts";
 import { Share2, Check } from "lucide-react";
 
@@ -20,6 +21,7 @@ export function AsidePanel({ card, formattedPrice }: AsidePanelProps) {
   const dispatch = useAppDispatch();
   const { isAuth } = useAppSelector((state) => state.auth);
   const { show: toast } = useToast();
+  const requireAuth = useRequireAuth();
 
   const [isSubscribed, setIsSubscribed] = useState(card.developer?.is_subscribed ?? false);
   const [isLoading, setIsLoading] = useState(false);
@@ -101,6 +103,10 @@ export function AsidePanel({ card, formattedPrice }: AsidePanelProps) {
           <div className="flex w-full gap-0">
             <a
               href={SHORT_PHONE_TEL}
+              onClick={(e) => {
+                // Гость → регистрация вместо звонка.
+                if (!requireAuth()) e.preventDefault();
+              }}
               className="flex-1 flex justify-center items-center py-3 font-[family-name:var(--font-stetica-bold)] transition-opacity hover:opacity-90 cursor-pointer text-white"
               style={{
                 backgroundColor: "var(--success-bg)",
@@ -110,7 +116,10 @@ export function AsidePanel({ card, formattedPrice }: AsidePanelProps) {
               Позвонить
             </a>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                if (!requireAuth()) return;
+                setIsModalOpen(true);
+              }}
               className="flex-1 py-3 text-white font-[family-name:var(--font-stetica-bold)] transition-opacity hover:opacity-90 cursor-pointer"
               style={{
                 backgroundColor: "var(--accent-secondary)",
