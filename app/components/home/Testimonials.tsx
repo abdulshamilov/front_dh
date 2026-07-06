@@ -1,42 +1,66 @@
 "use client";
 
-import { Star } from "lucide-react";
+import { Star, ArrowUpRight } from "lucide-react";
+
+// Профиль компании в Google Картах — все отзывы.
+const REVIEWS_URL =
+  "https://www.google.com/maps/place/Dream+House/@54.687388,39.5989109,17z/data=!4m8!3m7!1s0x4149fef674d8e6f7:0xa7fcd74b2c49a615!8m2!3d54.687388!4d39.5989109!9m1!1b1!16s%2Fg%2F11f15cfdqw";
 
 interface Testimonial {
   name: string;
-  city: string;
-  age: number;
+  date: string;
   text: string;
   rating: number;
 }
 
+// Реальные отзывы клиентов из Google Карт.
 const TESTIMONIALS: Testimonial[] = [
   {
-    name: "Патимат Магомедова",
-    city: "Махачкала",
-    age: 29,
-    text: "AI подобрал двушку у моря за вечер. Уже вносим задаток.",
+    name: "Максим Кирилов",
+    date: "месяц назад",
+    text: "Пришли уже с готовым проектом. Отдел проектирования внёс пару технических правок — и наш уникальный дом готов. Всё получилось именно так, как на картинке. За сроки в договоре не вышли.",
     rating: 5,
   },
   {
-    name: "Мурад Алиев",
-    city: "Каспийск",
-    age: 34,
-    text: "Связался напрямую — скидка и парковка в подарок.",
+    name: "Степан Тулепов",
+    date: "3 месяца назад",
+    text: "Компания построила нам невероятно красивый дом на нашем участке! Всем довольны.",
     rating: 5,
   },
   {
-    name: "Аминат Гаджиева",
-    city: "Избербаш",
-    age: 26,
-    text: "Карта, метраж, рассрочка — всё в одном месте.",
+    name: "Анатолий Королев",
+    date: "9 месяцев назад",
+    text: "Ребята настоящие профессионалы. Всё шло по плану, без задержек и неприятных сюрпризов.",
     rating: 5,
   },
   {
-    name: "Расул Омаров",
-    city: "Махачкала",
-    age: 38,
-    text: "Купил студию для дочери. Просто, без посредников.",
+    name: "Амир",
+    date: "11 месяцев назад",
+    text: "Думали, что стройка — это ад и грязь. Но с этой строительной компанией всё прошло спокойно и по плану.",
+    rating: 5,
+  },
+  {
+    name: "Виктория Рогачева",
+    date: "год назад",
+    text: "За пять месяцев построили загородный дом по индивидуальному проекту. Все действия заранее согласовывали со мной. Все строители — квалифицированные специалисты, претензий нет.",
+    rating: 5,
+  },
+  {
+    name: "Анатолий Бор",
+    date: "год назад",
+    text: "Обратился по рекомендации знакомых и остался доволен. Компания помогла с ипотекой.",
+    rating: 5,
+  },
+  {
+    name: "Сергей Енин",
+    date: "год назад",
+    text: "Выбрали компанию из-за адекватного соотношения цены и качества. Стройка без нареканий.",
+    rating: 5,
+  },
+  {
+    name: "Динара Галина",
+    date: "2 года назад",
+    text: "Заказывали дом. Условия оптимальные, в бюджет уложились. Сдали всё в срок, качеством довольны.",
     rating: 5,
   },
 ];
@@ -85,15 +109,25 @@ export function Testimonials() {
         >
           Нас выбирают
         </h2>
-        <span
+        <a
+          href={REVIEWS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
             fontFamily: "var(--font-inter), system-ui, sans-serif",
             fontSize: 13,
-            color: "var(--home-text-tertiary)",
+            fontWeight: 600,
+            color: "var(--home-accent-link)",
+            textDecoration: "none",
+            whiteSpace: "nowrap",
           }}
         >
-          {TESTIMONIALS.length} отзыва
-        </span>
+          Отзывы в Google
+          <ArrowUpRight size={14} />
+        </a>
       </header>
 
       <div
@@ -174,7 +208,7 @@ export function Testimonials() {
                     color: "var(--home-text-tertiary)",
                   }}
                 >
-                  {t.city}
+                  {t.date}
                 </span>
               </div>
 
@@ -187,7 +221,7 @@ export function Testimonials() {
                   lineHeight: 1.45,
                   color: "var(--home-text-secondary)",
                   display: "-webkit-box",
-                  WebkitLineClamp: 3,
+                  WebkitLineClamp: 4,
                   WebkitBoxOrient: "vertical",
                   overflow: "hidden",
                 }}
@@ -226,6 +260,69 @@ export function Testimonials() {
             </article>
           );
         })}
+
+        {/* CTA — все отзывы в 2ГИС */}
+        <a
+          href={REVIEWS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            flex: "0 0 auto",
+            width: 180,
+            scrollSnapAlign: "start",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            padding: 14,
+            borderRadius: 14,
+            background: "var(--home-accent-soft)",
+            border: "1px solid var(--home-border-strong)",
+            textDecoration: "none",
+            minHeight: 170,
+            textAlign: "center",
+          }}
+        >
+          <span
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              background: "var(--home-accent)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Star size={20} strokeWidth={0} style={{ color: "#fff", fill: "#fff" }} />
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-manrope), system-ui, sans-serif",
+              fontWeight: 700,
+              fontSize: 14,
+              color: "var(--home-text-primary)",
+            }}
+          >
+            Все отзывы
+          </span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              fontFamily: "var(--font-inter), system-ui, sans-serif",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--home-accent-link)",
+            }}
+          >
+            в Google
+
+            <ArrowUpRight size={14} />
+          </span>
+        </a>
       </div>
     </section>
   );

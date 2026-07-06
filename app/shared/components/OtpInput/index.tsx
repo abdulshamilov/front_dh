@@ -40,28 +40,76 @@ export function OtpInput({
     }
   }, [value, length]);
 
+  // WebOTP API — автосчитывание кода из SMS (Android Chrome). На iOS код
+  // подставляется через клавиатурную подсказку (autoComplete="one-time-code").
+  useEffect(() => {
+    if (typeof window === "undefined" || !("OTPCredential" in window)) return;
+    const ac = new AbortController();
+    navigator.credentials
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .get({ otp: { transport: ["sms"] }, signal: ac.signal } as any)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((cred: any) => {
+        const code = String(cred?.code ?? "").replace(/\D/g, "").slice(0, length);
+        if (!code) return;
+        const newOtp = new Array(length).fill("");
+        code.split("").forEach((c, i) => {
+          if (i < length) newOtp[i] = c;
+        });
+        setOtp(newOtp);
+        onChange(code);
+        if (code.length === length) onComplete?.(code);
+      })
+      .catch(() => {
+        /* пользователь отклонил или не поддерживается — молча игнорируем */
+      });
+    return () => ac.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Заполнить несколько ячеек сразу (автозаполнение SMS / вставка).
+  const fillFrom = (digits: string, index: number) => {
+    const newOtp = [...otp];
+    for (let i = 0; i < digits.length && index + i < length; i++) {
+      newOtp[index + i] = digits[i];
+    }
+    setOtp(newOtp);
+    const otpValue = newOtp.join("");
+    onChange(otpValue);
+    const nextIndex = Math.min(index + digits.length, length - 1);
+    inputRefs.current[nextIndex]?.focus();
+    if (otpValue.length === length) {
+      onComplete?.(otpValue);
+    }
+  };
+
   const handleChange = (element: HTMLInputElement, index: number) => {
-    const val = element.value;
-    
-    // Разрешаем только цифры
-    if (isNaN(Number(val)) && val !== "") {
+    const raw = element.value;
+    const digits = raw.replace(/\D/g, "");
+
+    // Нецифровой символ — игнорируем.
+    if (raw !== "" && digits === "") {
+      return;
+    }
+
+    // Автозаполнение из SMS (iOS/Android) кидает весь код в одно поле —
+    // распределяем его по ячейкам, а не берём один символ.
+    if (digits.length > 1) {
+      fillFrom(digits.slice(0, length), index);
       return;
     }
 
     const newOtp = [...otp];
-    newOtp[index] = val.slice(-1); // Берем только последний символ
+    newOtp[index] = digits.slice(-1);
     setOtp(newOtp);
 
-    // Обновляем родительский компонент
     const otpValue = newOtp.join("");
     onChange(otpValue);
 
-    // Переходим к следующему полю, если введена цифра
-    if (val && index < length - 1) {
+    if (digits && index < length - 1) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Вызываем onComplete, если все поля заполнены
     if (otpValue.length === length) {
       onComplete?.(otpValue);
     }
@@ -119,21 +167,31 @@ export function OtpInput({
           }}
           type="text"
           inputMode="numeric"
-          maxLength={1}
+          autoComplete={index === 0 ? "one-time-code" : "off"}
+          name={index === 0 ? "one-time-code" : undefined}
+          maxLength={index === 0 ? length : 1}
           value={digit}
           onChange={(e) => handleChange(e.target, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
           onPaste={handlePaste}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = error
+              ? "var(--error)"
+              : "var(--text-primary)";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = error
+              ? "var(--error)"
+              : "var(--border-color)";
+          }}
           disabled={disabled}
-          className="w-12 h-12 sm:w-14 sm:h-14 text-center text-xl sm:text-2xl font-bold rounded-lg border-2 focus:outline-none transition-all"
+          className="w-14 h-16 text-center text-2xl font-bold rounded-2xl border focus:outline-none transition-all"
           style={{
             color: "var(--text-primary)",
             backgroundColor: error
               ? "rgba(255, 68, 68, 0.12)"
-              : "var(--card-bg)",
-            borderColor: error
-              ? "var(--error)"
-              : "var(--border-color)",
+              : "var(--surface)",
+            borderColor: error ? "var(--error)" : "var(--border-color)",
             boxShadow: "none",
             outline: "none",
             opacity: disabled ? 0.5 : 1,

@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ICard } from "@/app/types/models";
-import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
+import { useAppDispatch } from "@/app/shared/redux/hooks";
+import { useRequireAuth } from "@/app/shared/hooks/useRequireAuth";
 import { toggleFavorite, updateCardFavorite } from "@/app/shared/redux/slices/cards";
 import { SHORT_PHONE_TEL } from "@/app/shared/utils/contacts";
 import { ReactElement, memo, useMemo, useCallback, useState, useRef } from "react";
@@ -22,7 +23,7 @@ function resolveTag(card: ICard): StatusTag | null {
   const ms = Date.parse(card.created_at || "");
   if (!isNaN(ms) && ms > 0) {
     const ageMs = Date.now() - ms;
-    if (ageMs >= 0 && ageMs < 7 * 24 * 60 * 60 * 1000) return "NEW";
+    if (ageMs >= 0 && ageMs < 2 * 24 * 60 * 60 * 1000) return "NEW";
   }
   return null;
 }
@@ -74,7 +75,7 @@ export const CellComponent: React.FC<CardItemPreviewProps> = ({ card }) => {
 
 export const CardItemPreview = memo(function CardItemPreview({ card, showCallButton }: CardItemPreviewProps): ReactElement {
   const dispatch = useAppDispatch();
-  const { isAuth } = useAppSelector((state) => state.auth);
+  const requireAuth = useRequireAuth();
   const [imgError, setImgError] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [showHeart, setShowHeart] = useState(false);
@@ -108,14 +109,11 @@ export const CardItemPreview = memo(function CardItemPreview({ card, showCallBut
   const handleFavoriteClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuth) {
-      alert("Войдите в систему, чтобы добавить в избранное");
-      return;
-    }
+    if (!requireAuth()) return;
     dispatch(
       toggleFavorite({ id: card.id, is_favorite: card.is_favorite || false })
     );
-  }, [dispatch, isAuth, card.id, card.is_favorite]);
+  }, [dispatch, requireAuth, card.id, card.is_favorite]);
 
   const handleImageError = useCallback(() => {
     setImgError(true);
@@ -137,7 +135,10 @@ export const CardItemPreview = memo(function CardItemPreview({ card, showCallBut
         // Double tap detected — prevent link navigation
         e.preventDefault();
         e.stopPropagation();
-        if (!card.is_favorite && isAuth) {
+        lastTapRef.current = 0;
+        // Гость — ведём на регистрацию (как и на кнопке избранного).
+        if (!requireAuth()) return;
+        if (!card.is_favorite) {
           dispatch(updateCardFavorite({ id: card.id, is_favorite: true }));
           dispatch(
             toggleFavorite({ id: card.id, is_favorite: false })
@@ -150,16 +151,12 @@ export const CardItemPreview = memo(function CardItemPreview({ card, showCallBut
           });
           setShowHeart(true);
           setTimeout(() => setShowHeart(false), 1000);
-        } else if (!card.is_favorite && !isAuth) {
-          setShowHeart(true);
-          setTimeout(() => setShowHeart(false), 1000);
         }
-        lastTapRef.current = 0;
         return;
       }
       lastTapRef.current = now;
     },
-    [card, isAuth, dispatch]
+    [card, requireAuth, dispatch]
   );
 
   return (

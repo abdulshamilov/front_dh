@@ -8,12 +8,14 @@ import { Search } from "@/app/components/Search";
 import { HeaderAvatar } from "@/app/components/HeaderAvatar";
 import { NotificationBell } from "@/app/components/NotificationBell";
 import { useAppSelector } from "@/app/shared/redux/hooks";
+import { useRequireAuth } from "@/app/shared/hooks/useRequireAuth";
 import { SupportTooltip } from "@/app/components/SupportTooltip";
 import { AiBanner } from "@/app/components/home/AiBanner";
 import { CityPicker } from "@/app/components/Header/CityPicker";
 
-const HIDDEN_PATHS = ["/login", "/register", "/forgot", "/chat", "/profile"];
-const NO_SEARCH_PATHS = ["/card/", "/profile", "/map"];
+const HIDDEN_PATHS = ["/login", "/register", "/forgot", "/chat", "/profile", "/favorite"];
+const NO_CITY_PATHS = ["/developers"];
+const NO_SEARCH_PATHS = ["/card/", "/profile", "/map", "/developers"];
 
 // ─── Logo ────────────────────────────────────────────────────────────────────
 
@@ -222,6 +224,10 @@ const GRADIENT_BG = "linear-gradient(165deg, #353358 0%, #22212F 55%, #15142A 10
 export const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const requireAuth = useRequireAuth();
+  const goFavorite = () => {
+    if (requireAuth("/favorite")) router.push("/favorite");
+  };
   const { isAuth } = useAppSelector((s) => s.auth);
   const globalTotal = useAppSelector((s) => s.cards.globalTotalCount);
   const currentTotal = useAppSelector((s) => s.cards.totalCount);
@@ -246,8 +252,17 @@ export const Header = () => {
       pathname === "/map",
     [pathname]
   );
-  const hideSearch = useMemo(() => NO_SEARCH_PATHS.some((p) => pathname.startsWith(p)), [pathname]);
   const isHome = pathname === "/";
+  // На главной поиск живёт в HomeHero (стиль референса), поэтому встроенный
+  // поиск шапки на "/" скрываем, чтобы не было двух строк поиска.
+  const hideSearch = useMemo(
+    () => isHome || NO_SEARCH_PATHS.some((p) => pathname.startsWith(p)),
+    [pathname, isHome]
+  );
+  const hideCity = useMemo(
+    () => NO_CITY_PATHS.some((p) => pathname.startsWith(p)),
+    [pathname]
+  );
 
   if (isHidden) return null;
 
@@ -274,7 +289,7 @@ export const Header = () => {
               <Logo className="w-[64px] h-[38px]" />
             </Link>
             <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <IconBtn label="Избранное" onClick={() => router.push("/favorite")}>
+              <IconBtn label="Избранное" onClick={goFavorite}>
                 <Heart size={22} strokeWidth={2} />
               </IconBtn>
               <div style={{ position: "relative" }}>
@@ -290,9 +305,11 @@ export const Header = () => {
           </div>
 
           {/* 2) Город */}
-          <div style={{ paddingBottom: 10 }}>
-            <CityPicker variant="stacked" />
-          </div>
+          {!hideCity && (
+            <div style={{ paddingBottom: 10 }}>
+              <CityPicker variant="stacked" />
+            </div>
+          )}
 
           {/* 3) Поиск */}
           {!hideSearch && (
@@ -319,10 +336,10 @@ export const Header = () => {
             <Link href="/" style={{ flexShrink: 0 }}>
               <Logo />
             </Link>
-            <CityPicker variant="pill" />
+            {!hideCity && <CityPicker variant="pill" />}
             <div style={{ flex: 1 }} />
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <IconBtn label="Избранное" onClick={() => router.push("/favorite")}>
+              <IconBtn label="Избранное" onClick={goFavorite}>
                 <Heart size={24} strokeWidth={2} />
               </IconBtn>
               <div style={{ position: "relative" }}>

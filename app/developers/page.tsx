@@ -2,8 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { Phone } from "lucide-react";
+import { ChevronRight, Phone, Building2 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
 import { fetchDevelopers } from "@/app/shared/redux/slices/developers";
 
@@ -15,21 +14,14 @@ function objectsWord(n: number): string {
   return "объектов";
 }
 
-function Skeleton() {
+function SkeletonRow({ last }: { last?: boolean }) {
   return (
-    <div style={{
-      borderRadius: 16,
-      background: "rgba(255,255,255,0.03)",
-      border: "1px solid rgba(255,255,255,0.06)",
-      display: "flex",
-      alignItems: "center",
-      gap: 16,
-      padding: "16px 18px",
-    }}>
-      <div style={{ width: 64, height: 64, borderRadius: 12, background: "rgba(255,255,255,0.06)", flexShrink: 0, animation: "pulse 1.5s ease-in-out infinite" }} />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ height: 15, width: "60%", borderRadius: 6, background: "rgba(255,255,255,0.06)", animation: "pulse 1.5s ease-in-out infinite" }} />
-        <div style={{ height: 12, width: "35%", borderRadius: 6, background: "rgba(255,255,255,0.04)", animation: "pulse 1.5s ease-in-out infinite 0.15s" }} />
+    <div className="ios-row" style={{ pointerEvents: "none" }}>
+      <div className="ios-row-body" style={{ borderBottom: last ? "none" : undefined }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+          <div style={{ height: 14, width: "55%", borderRadius: 7, background: "rgba(255,255,255,0.07)", animation: "pulse 1.5s ease-in-out infinite" }} />
+          <div style={{ height: 11, width: "30%", borderRadius: 6, background: "rgba(255,255,255,0.045)", animation: "pulse 1.5s ease-in-out infinite 0.15s" }} />
+        </div>
       </div>
     </div>
   );
@@ -42,207 +34,144 @@ export default function DevelopersPage() {
 
   useEffect(() => { dispatch(fetchDevelopers()); }, [dispatch]);
 
+  const filtered = developers;
+
   return (
     <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh" }}>
-
-      {/* Header */}
-      <div style={{
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        padding: "32px 16px 28px",
-      }}>
-        <div style={{ maxWidth: 1300, margin: "0 auto" }}>
-          <h1 style={{
-            margin: 0,
-            fontFamily: "var(--font-stetica-bold), system-ui, sans-serif",
-            fontSize: "clamp(24px, 4vw, 36px)",
-            color: "#FFFFFF",
-            letterSpacing: "-0.02em",
-          }}>
-            Жилые комплексы
-          </h1>
-          {!loading && developers.length > 0 && (
-            <p style={{
-              margin: "6px 0 0",
-              fontFamily: "var(--font-inter), system-ui, sans-serif",
-              fontSize: 14,
-              color: "rgba(255,255,255,0.3)",
-            }}>
-              {developers.length} {objectsWord(developers.length)}
-            </p>
-          )}
-        </div>
-      </div>
-
       <style>{`
-        .dev-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        .ios-group {
+          border-radius: 16px;
+          background: var(--home-surface, #1D2024);
+          overflow: hidden;
+        }
+        .ios-row {
+          display: flex;
+          align-items: center;
+          padding-left: 16px;
+          min-height: 76px;
+          text-decoration: none;
+          color: inherit;
+          -webkit-tap-highlight-color: transparent;
+          transition: background 120ms ease;
+        }
+        a.ios-row:active { background: rgba(255,255,255,0.09); }
+        @media (hover: hover) {
+          a.ios-row:hover { background: rgba(255,255,255,0.05); }
+        }
+        .ios-row-body {
+          display: flex;
+          align-items: center;
           gap: 10px;
+          flex: 1;
+          min-width: 0;
+          padding: 12px 16px 12px 0;
+          border-bottom: 0.5px solid rgba(255,255,255,0.08);
         }
-        @media (max-width: 640px) {
-          .dev-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          .dev-card {
-            padding: 10px 8px !important;
-            gap: 8px !important;
-            flex-direction: column !important;
-            align-items: flex-start !important;
-          }
-          .dev-logo {
-            width: 44px !important;
-            height: 44px !important;
-          }
-          .dev-arrow {
-            display: none !important;
-          }
-          .dev-name {
-            font-size: 13px !important;
-          }
-          .dev-meta {
-            flex-direction: column !important;
-            gap: 3px !important;
-            align-items: flex-start !important;
-          }
+        .ios-row:last-child .ios-row-body { border-bottom: none; }
+
+        .ios-badge {
+          flex-shrink: 0;
+          font-family: var(--font-inter), -apple-system, system-ui, sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.55);
+          background: rgba(255,255,255,0.08);
+          border-radius: 100px;
+          padding: 4px 10px;
         }
+        @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.45 } }
       `}</style>
 
-      {/* List */}
-      <div style={{ maxWidth: 1300, margin: "0 auto", padding: "24px 16px 64px" }}>
+      {/* Content */}
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "16px 16px 72px" }}>
         {error && (
           <div style={{
-            padding: "14px 18px", borderRadius: 12, marginBottom: 20,
-            background: "rgba(241,17,126,0.07)", border: "1px solid rgba(241,17,126,0.15)",
-            color: "rgba(255,255,255,0.5)", fontSize: 14,
-            fontFamily: "var(--font-inter), system-ui, sans-serif",
+            padding: "13px 16px", borderRadius: 14, marginBottom: 14,
+            background: "rgba(255,68,68,0.09)",
+            color: "#FF6B6B", fontSize: 14,
+            fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
           }}>
             {error}
           </div>
         )}
 
-        <div className="dev-grid">
+        {!loading && filtered.length > 0 && (
+          <p style={{
+            margin: "0 0 8px",
+            padding: "0 16px",
+            fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
+            fontSize: 13,
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+            color: "rgba(255,255,255,0.35)",
+          }}>
+            {filtered.length} {objectsWord(filtered.length)}
+          </p>
+        )}
+
+        <div className="ios-group">
           {loading
-            ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} />)
-            : developers.map((dev) => {
+            ? Array.from({ length: 8 }).map((_, i, arr) => (
+                <SkeletonRow key={i} last={i === arr.length - 1} />
+              ))
+            : filtered.map((dev) => {
                 const count = dev.cards?.length ?? 0;
 
                 return (
-                  <Link
-                    key={dev.id}
-                    href={`/developers/${dev.id}`}
-                    className="dev-card"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 16,
-                      padding: "14px 16px",
-                      borderRadius: 16,
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                      textDecoration: "none",
-                      color: "inherit",
-                      transition: "background 160ms ease, border-color 160ms ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      const el = e.currentTarget as HTMLElement;
-                      el.style.background = "rgba(255,255,255,0.055)";
-                      el.style.borderColor = "rgba(255,255,255,0.13)";
-                    }}
-                    onMouseLeave={(e) => {
-                      const el = e.currentTarget as HTMLElement;
-                      el.style.background = "rgba(255,255,255,0.03)";
-                      el.style.borderColor = "rgba(255,255,255,0.07)";
-                    }}
-                  >
-                    {/* Logo */}
-                    <div className="dev-logo" style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 12,
-                      background: "#FFFFFF",
-                      flexShrink: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      overflow: "hidden",
-                      padding: 6,
-                    }}>
-                      {dev.logo ? (
-                        <Image
-                          src={dev.logo}
-                          alt={dev.name}
-                          width={52}
-                          height={52}
-                          style={{ objectFit: "contain", width: "100%", height: "100%" }}
-                        />
-                      ) : (
-                        <span style={{
-                          fontSize: 22,
-                          fontFamily: "var(--font-stetica-bold), system-ui, sans-serif",
-                          color: "#333",
+                  <Link key={dev.id} href={`/developers/${dev.id}`} className="ios-row">
+                    <div className="ios-row-body">
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontFamily: "var(--font-stetica-bold), -apple-system, system-ui, sans-serif",
+                          fontSize: 16,
+                          color: "#FFFFFF",
+                          lineHeight: 1.3,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}>
-                          {dev.name.charAt(0)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="dev-name" style={{
-                        fontFamily: "var(--font-stetica-bold), system-ui, sans-serif",
-                        fontSize: 15,
-                        color: "#FFFFFF",
-                        lineHeight: 1.3,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}>
-                        {dev.name}
-                      </div>
-
-                      <div className="dev-meta" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 5, flexWrap: "wrap" }}>
-                        {count > 0 && (
-                          <span style={{
-                            fontFamily: "var(--font-inter), system-ui, sans-serif",
-                            fontSize: 12,
-                            color: "rgba(255,255,255,0.35)",
-                          }}>
-                            {count} {objectsWord(count)}
-                          </span>
-                        )}
+                          {dev.name}
+                        </div>
                         {dev.phone && (
-                          <>
-                            {count > 0 && <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 10 }}>•</span>}
-                            <span style={{
-                              display: "flex", alignItems: "center", gap: 4,
-                              fontFamily: "var(--font-inter), system-ui, sans-serif",
-                              fontSize: 12,
-                              color: "rgba(255,255,255,0.3)",
-                            }}>
-                              <Phone size={11} strokeWidth={2} />
-                              {dev.phone}
-                            </span>
-                          </>
+                          <div style={{
+                            display: "flex", alignItems: "center", gap: 5,
+                            marginTop: 3,
+                            fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
+                            fontSize: 13,
+                            color: "rgba(255,255,255,0.38)",
+                          }}>
+                            <Phone size={11} strokeWidth={2} />
+                            {dev.phone}
+                          </div>
                         )}
                       </div>
-                    </div>
 
-                    {/* Arrow */}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="dev-arrow" style={{ flexShrink: 0, color: "rgba(255,255,255,0.2)" }}>
-                      <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                      {count > 0 && <span className="ios-badge">{count}</span>}
+
+                      <ChevronRight
+                        size={17}
+                        strokeWidth={2.5}
+                        style={{ flexShrink: 0, color: "rgba(255,255,255,0.22)" }}
+                      />
+                    </div>
                   </Link>
                 );
               })}
         </div>
 
-        {!loading && !error && developers.length === 0 && (
+        {!loading && !error && filtered.length === 0 && (
           <div style={{
-            textAlign: "center", padding: "80px 0",
-            fontFamily: "var(--font-inter), system-ui, sans-serif",
-            fontSize: 15, color: "rgba(255,255,255,0.25)",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+            textAlign: "center", padding: "72px 0",
           }}>
-            Жилые комплексы не найдены
+            <Building2 size={36} strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.18)" }} />
+            <span style={{
+              fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
+              fontSize: 15, color: "rgba(255,255,255,0.3)",
+            }}>
+              Жилые комплексы не найдены
+            </span>
           </div>
         )}
       </div>

@@ -1,6 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Pencil } from "lucide-react";
+
+// Группировка по 3 цифры пробелом: "50000000" → "50 000 000".
+function groupDigits(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
 
 interface RangeSliderProps {
   label: string;
@@ -30,11 +38,56 @@ export function RangeSlider({
   const [error, setError] = useState<string | null>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
 
+  // Текстовый ввод в поля «от»/«до».
+  const [minInput, setMinInput] = useState("");
+  const [maxInput, setMaxInput] = useState("");
+  const [minFocused, setMinFocused] = useState(false);
+  const [maxFocused, setMaxFocused] = useState(false);
+
   useEffect(() => {
     setLocalMin(valueMin ?? min);
     setLocalMax(valueMax ?? max);
     setError(null);
   }, [valueMin, valueMax, min, max]);
+
+  const clamp = (v: number, lo: number, hi: number) =>
+    Math.min(Math.max(v, lo), hi);
+
+  // Ввод «от»: не ниже min и не выше текущего «до».
+  const commitMin = useCallback(
+    (raw: string) => {
+      const cleaned = raw.replace(/[^\d.,]/g, "").replace(",", ".");
+      if (cleaned === "") {
+        setLocalMin(min);
+        onChangeMin("");
+        return;
+      }
+      const parsed = parseFloat(cleaned);
+      if (isNaN(parsed)) return;
+      const v = clamp(parsed, min, Math.min(localMax, max));
+      setLocalMin(v);
+      onChangeMin(v === min ? "" : v);
+    },
+    [localMax, min, max, onChangeMin]
+  );
+
+  // Ввод «до»: не выше max (указанного максимума) и не ниже текущего «от».
+  const commitMax = useCallback(
+    (raw: string) => {
+      const cleaned = raw.replace(/[^\d.,]/g, "").replace(",", ".");
+      if (cleaned === "") {
+        setLocalMax(max);
+        onChangeMax("");
+        return;
+      }
+      const parsed = parseFloat(cleaned);
+      if (isNaN(parsed)) return;
+      const v = clamp(parsed, Math.max(localMin, min), max);
+      setLocalMax(v);
+      onChangeMax(v === max ? "" : v);
+    },
+    [localMin, min, max, onChangeMax]
+  );
 
   const handleMinChange = useCallback(
     (value: number) => {
@@ -139,7 +192,7 @@ export function RangeSlider({
           fontSize: 13,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
           <span
             style={{
               color: "var(--text-tertiary)",
@@ -150,17 +203,33 @@ export function RangeSlider({
           >
             от
           </span>
-          <span
-            style={{
-              color: "var(--text-primary)",
-              fontWeight: 600,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {formatValue(localMin)}
+          <span className="range-field">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={minFocused ? minInput : formatValue(localMin)}
+              onFocus={() => {
+                setMinFocused(true);
+                setMinInput(groupDigits(String(localMin)));
+              }}
+              onChange={(e) => setMinInput(groupDigits(e.target.value))}
+              onBlur={() => {
+                commitMin(minInput);
+                setMinFocused(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  commitMin(minInput);
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
+              aria-label={`${label} минимум`}
+              className="range-num"
+            />
+            {!minFocused && <Pencil size={12} className="range-pencil" aria-hidden />}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 0 }}>
           <span
             style={{
               color: "var(--text-tertiary)",
@@ -171,14 +240,30 @@ export function RangeSlider({
           >
             до
           </span>
-          <span
-            style={{
-              color: "var(--text-primary)",
-              fontWeight: 600,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {formatValue(localMax)}
+          <span className="range-field">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={maxFocused ? maxInput : formatValue(localMax)}
+              onFocus={() => {
+                setMaxFocused(true);
+                setMaxInput(groupDigits(String(localMax)));
+              }}
+              onChange={(e) => setMaxInput(groupDigits(e.target.value))}
+              onBlur={() => {
+                commitMax(maxInput);
+                setMaxFocused(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  commitMax(maxInput);
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
+              aria-label={`${label} максимум`}
+              className="range-num"
+            />
+            {!maxFocused && <Pencil size={12} className="range-pencil" aria-hidden />}
           </span>
         </div>
       </div>
@@ -259,6 +344,52 @@ export function RangeSlider({
           </div>
 
           <style jsx>{`
+            .range-field {
+              flex: 1;
+              min-width: 0;
+              display: flex;
+              align-items: center;
+              justify-content: flex-end;
+              gap: 4px;
+              padding: 0;
+              background: transparent;
+              border: none;
+              cursor: text;
+            }
+            .range-pencil {
+              flex-shrink: 0;
+              color: var(--text-tertiary);
+              opacity: 0.6;
+            }
+            .range-num {
+              flex: 1;
+              width: 100%;
+              min-width: 0;
+              text-align: right;
+              background: transparent !important;
+              border: none;
+              box-shadow: none;
+              padding: 0;
+              margin: 0;
+              color: var(--text-primary);
+              font-weight: 600;
+              font-size: 13px;
+              font-variant-numeric: tabular-nums;
+              outline: none;
+              -webkit-appearance: none;
+              appearance: none;
+              -webkit-tap-highlight-color: transparent;
+              caret-color: var(--accent-primary);
+            }
+            .range-num:focus,
+            .range-num:active {
+              background: transparent !important;
+              box-shadow: none;
+              outline: none;
+            }
+            .range-field:focus-within .range-num {
+              color: var(--accent-primary);
+            }
             input[type="range"] {
               pointer-events: none;
               position: absolute;

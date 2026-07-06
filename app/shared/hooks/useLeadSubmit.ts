@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { useToast } from "@/app/components/shared/Toast";
+import { useRequireAuth } from "@/app/shared/hooks/useRequireAuth";
 import {
   submitLead,
   type LeadPayload,
@@ -44,9 +45,12 @@ export function useLeadSubmit(
   // до второго вызова при быстром клике или retry-toast.
   const isSubmittingRef = useRef(false);
   const { show: toast } = useToast();
+  const requireAuth = useRequireAuth();
 
   const submit = useCallback(
     async (payload: LeadPayload): Promise<boolean> => {
+      // Заявку может оставить только авторизованный — гостя ведём на регистрацию.
+      if (!requireAuth()) return false;
       if (isSubmittingRef.current) return false;
       isSubmittingRef.current = true;
 
@@ -59,7 +63,7 @@ export function useLeadSubmit(
         if (!options.silentSuccess) {
           toast(
             options.successMessage ??
-              "Заявка отправлена! Менеджер свяжется в течение 15 минут",
+              "Заявка отправлена! В скором времени с вами свяжется менеджер",
             { type: "success", duration: options.successDuration ?? 6000 }
           );
         }
@@ -95,7 +99,7 @@ export function useLeadSubmit(
         setIsSubmitting(false);
       }
     },
-    [options, toast]
+    [options, toast, requireAuth]
   );
 
   const reset = useCallback(() => setError(null), []);

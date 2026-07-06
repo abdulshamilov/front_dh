@@ -8,6 +8,8 @@ import { AsidePanel } from "@/app/card/[id]/lib/AsidePanel";
 import type { ICard } from "@/app/types/models";
 import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
 import { fetchCardById } from "@/app/shared/redux/slices/cards";
+import { useLeadSubmit } from "@/app/shared/hooks/useLeadSubmit";
+import { extractDigits } from "@/app/shared/utils/phone";
 import { EmptyState } from "@/app/components/shared/EmptyState";
 import { Button } from "@/app/components/shared/Button";
 import { CallRequestModal } from "@/app/components/CallRequestModal";
@@ -153,8 +155,79 @@ function CardDetailV2Loaded({
   const actions = useCardActions(card);
   const [tab, setTab] = useState<TabKey>("specifications");
   const [requestOpen, setRequestOpen] = useState(false);
+  const has3d = Boolean(card.has_3d_model && card.model_3d_glb);
+  // Переключатель медиа: фото-галерея или 3D-модель на её месте.
+  const [media, setMedia] = useState<"photos" | "3d">("photos");
+
+  const user = useAppSelector((s) => s.auth.user);
+  const { submit: submitLead } = useLeadSubmit({
+    successMessage: "Заявка отправлена! В скором времени с вами свяжется менеджер",
+  });
+
+  // Авторизован и есть телефон в аккаунте → имя+номер берём из профиля и
+  // отправляем заявку сразу с toast-уведомлением. Иначе — открываем форму.
+  const handleRequest = useCallback(() => {
+    const phone = extractDigits(user?.phone_number ?? "");
+    if (user && phone.length >= 10) {
+      submitLead({
+        kind: "call_request",
+        cardId: card.id,
+        phone_number: phone,
+        name: user.name ?? "",
+      });
+      return;
+    }
+    setRequestOpen(true);
+  }, [user, card.id, submitLead]);
 
   const sidebarPrice = formatPrice(card.price);
+
+  // Сегмент-переключатель «Фото / 3D» в стиле iOS.
+  const mediaSwitch = has3d ? (
+    <div
+      role="tablist"
+      aria-label="Фото или 3D-модель"
+      style={{
+        display: "flex",
+        gap: 2,
+        padding: 3,
+        borderRadius: 12,
+        background: "var(--surface)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        width: "fit-content",
+      }}
+    >
+      {([
+        { key: "photos", label: "Фото" },
+        { key: "3d", label: "3D" },
+      ] as const).map((o) => {
+        const active = media === o.key;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => setMedia(o.key)}
+            style={{
+              padding: "7px 18px",
+              borderRadius: 9,
+              border: "none",
+              cursor: "pointer",
+              background: active ? "var(--accent-primary)" : "transparent",
+              color: active ? "#FFFFFF" : "var(--text-secondary)",
+              fontFamily: "var(--font-stetica-bold)",
+              fontSize: 13,
+              transition: "background 160ms ease, color 160ms ease",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  ) : null;
 
   return (
     <div
@@ -163,35 +236,27 @@ function CardDetailV2Loaded({
     >
       {/* ── MOBILE: узкая колонка 480px — без изменений ── */}
       <div className="lg:hidden w-full max-w-[480px] relative">
-        <HeroGallery
-          card={card}
-          isFavorite={actions.isFavorite}
-          onToggleFav={actions.toggleFav}
-          onShare={actions.share}
-          onBack={onBack}
-        />
-        {card.has_3d_model && card.model_3d_glb && (
-          <div style={{ padding: '16px 16px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 18,
-                  fontFamily: 'var(--font-stetica-bold)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                3D-просмотр планировки
-              </p>
-            </div>
+        {media === "3d" && has3d ? (
+          <div style={{ padding: "16px 16px 0" }}>
             <Apartment3DViewer
-              glbUrl={card.model_3d_glb}
+              glbUrl={card.model_3d_glb!}
               usdzUrl={card.model_3d_usdz}
               posterUrl={card.model_3d_poster}
               alt={`3D-модель планировки: ${card.title}`}
               apartmentId={card.id}
             />
           </div>
+        ) : (
+          <HeroGallery
+            card={card}
+            isFavorite={actions.isFavorite}
+            onToggleFav={actions.toggleFav}
+            onShare={actions.share}
+            onBack={onBack}
+          />
+        )}
+        {mediaSwitch && (
+          <div style={{ padding: "12px 16px 0" }}>{mediaSwitch}</div>
         )}
         <PriceTitleSection card={card} onRatingClick={undefined} />
         <div style={{ paddingLeft: 16, paddingRight: 16 }}>
@@ -223,52 +288,46 @@ function CardDetailV2Loaded({
             {/* Левая колонка: основной контент */}
             <div className="flex-1 min-w-0 flex flex-col gap-6">
 
-              {/* Галерея 16:9 с закруглёнными углами */}
-              <div style={{ borderRadius: "24px", overflow: "hidden" }}>
-                <HeroGallery
-                  card={card}
-                  isFavorite={actions.isFavorite}
-                  onToggleFav={actions.toggleFav}
-                  onShare={actions.share}
-                  onBack={onBack}
-                  aspectRatio="16 / 9"
-                />
-              </div>
-
-              {/* 3D-просмотр (если есть модель) */}
-              {card.has_3d_model && card.model_3d_glb && (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: 20,
-                        fontFamily: 'var(--font-stetica-bold)',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      3D-просмотр планировки
-                    </p>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: 12,
-                        fontFamily: 'var(--font-stetica-medium)',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      Покрутите модель чтобы рассмотреть со всех сторон
-                    </p>
-                  </div>
+              {/* Галерея / 3D с переключателем */}
+              <div className="flex flex-col gap-3">
+                {media === "3d" && has3d ? (
                   <Apartment3DViewer
-                    glbUrl={card.model_3d_glb}
+                    glbUrl={card.model_3d_glb!}
                     usdzUrl={card.model_3d_usdz}
                     posterUrl={card.model_3d_poster}
                     alt={`3D-модель планировки: ${card.title}`}
                     apartmentId={card.id}
                   />
-                </div>
-              )}
+                ) : (
+                  <div style={{ borderRadius: "24px", overflow: "hidden" }}>
+                    <HeroGallery
+                      card={card}
+                      isFavorite={actions.isFavorite}
+                      onToggleFav={actions.toggleFav}
+                      onShare={actions.share}
+                      onBack={onBack}
+                      aspectRatio="16 / 9"
+                    />
+                  </div>
+                )}
+                {mediaSwitch && (
+                  <div className="flex items-center gap-3">
+                    {mediaSwitch}
+                    {media === "3d" && (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 12,
+                          fontFamily: "var(--font-stetica-medium)",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        Покрутите модель чтобы рассмотреть со всех сторон
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Цена, заголовок, адрес, чипы */}
               <div
@@ -326,7 +385,7 @@ function CardDetailV2Loaded({
       </div>
 
       {/* BottomCtaApp скрывается на desktop через свой CSS (@media lg display:none) */}
-      <BottomCtaApp onRequestClick={() => setRequestOpen(true)} />
+      <BottomCtaApp onRequestClick={handleRequest} />
 
       <CallRequestModal
         isOpen={requestOpen}

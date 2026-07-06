@@ -12,6 +12,7 @@ import {
 } from "@/app/shared/redux/slices/cards";
 import { fetchDevelopers } from "@/app/shared/redux/slices/developers";
 import { ICardFilters } from "@/app/types";
+import { HomeHero } from "@/app/components/home/HomeHero";
 import { PromoBanner } from "@/app/components/home/PromoBanner";
 import { FilterBar, SortKey } from "@/app/components/home/FilterBar";
 import { ListingsGrid } from "@/app/components/home/ListingsGrid";
@@ -177,6 +178,7 @@ function HomeContent() {
       {/* Banner — scrolls normally */}
       <div style={{ background: "var(--home-bg)" }}>
         <div style={{ maxWidth: 1280, margin: "0 auto", padding: "12px 0 0" }}>
+          <HomeHero />
           <PromoBanner />
         </div>
       </div>

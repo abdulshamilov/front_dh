@@ -489,6 +489,26 @@ body.modal-open {
   transform: scale(0.9);
 }
 
+/* ===== Instagram-style tab tap (spring bounce) =====
+ * Idle → overshoot spring back. On press the icon quickly shrinks;
+ * on release it springs back past 1.0 and settles — like iOS Instagram. */
+/* Instagram-подобный тап: мягкое поджатие и плавный возврат.
+ * Анимация запускается на pointerdown и всегда проигрывается целиком —
+ * поэтому даже на очень быстром касании ощущается плавной, а не «деревянной». */
+.tab-item {
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+@keyframes tab-pop {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.86); }
+  100% { transform: scale(1); }
+}
+.tab-pop {
+  animation: tab-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .press-scale-card {
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -552,6 +572,19 @@ body.modal-open {
 }
 
 
+/* Instagram-style tab pop: springy scale bounce on tap */
+@keyframes nav-pop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.28); }
+  55% { transform: scale(0.86); }
+  75% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.nav-pop {
+  animation: nav-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* AI assistant FAB: above bottom bar on mobile, standard offset on desktop */
 .ai-fab-bottom {
   bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 16px);
@@ -560,4 +593,11 @@ body.modal-open {
   .ai-fab-bottom {
     bottom: 32px;
   }
+}
+
+/* /chat: BottomBar скрыт, поэтому убираем глобальный отступ main
+   (ChatShell вешает этот класс на body) — иначе под полем ввода
+   остаётся пустая чёрная полоса. */
+body.no-bottom-pad main {
+  padding-bottom: 0 !important;
 }

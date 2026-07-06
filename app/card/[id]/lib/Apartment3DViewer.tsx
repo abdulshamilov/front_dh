@@ -100,12 +100,9 @@ export default function Apartment3DViewer({
     };
   }, [apartmentId, retryKey]);
 
-  const toggleAutoRotate = () => {
-    const viewer = viewerRef.current;
-    if (!viewer) return;
-    viewer.autoRotate = !isRotating;
-    setIsRotating(!isRotating);
-  };
+  // Атрибут auto-rotate управляется через state в JSX; property на элементе
+  // не трогаем — иначе React и model-viewer конфликтуют и вращение "залипает".
+  const toggleAutoRotate = () => setIsRotating((p) => !p);
 
   const takeSnapshot = () => {
     const viewer = viewerRef.current;
@@ -195,7 +192,7 @@ export default function Apartment3DViewer({
         alt={alt}
         camera-controls=""
         auto-rotate={isRotating ? '' : undefined}
-        auto-rotate-delay="3000"
+        auto-rotate-delay="0"
         rotation-per-second="20deg"
         shadow-intensity="1"
         environment-image="neutral"
@@ -249,91 +246,47 @@ export default function Apartment3DViewer({
           Зажмите и поверните
         </div>
 
-        {/* Кнопка вращения — слева снизу */}
-        <button
-          onClick={toggleAutoRotate}
-          aria-label={isRotating ? 'Остановить вращение' : 'Включить вращение'}
-          style={{
-            position: 'absolute',
-            bottom: 14,
-            left: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '8px 16px',
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 999,
-            color: '#fff',
-            fontSize: 13,
-            fontFamily: 'var(--font-stetica-medium)',
-            cursor: 'pointer',
-          }}
-        >
-          <RotateCw
-            size={15}
-            style={{
-              animation: isRotating ? 'spin 3s linear infinite' : 'none',
-            }}
-          />
-          {isRotating ? 'Остановить' : 'Вращать'}
-        </button>
-
-        {/* Бейдж «3D-планировка» — по центру снизу */}
+        {/* Кнопки управления — круглые, в стиле iOS, справа снизу */}
         <div
           style={{
             position: 'absolute',
-            bottom: 14,
-            left: '50%',
-            transform: 'translateX(-50%)',
+            bottom: 12,
+            right: 12,
             display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '8px 16px',
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 999,
-            color: '#fff',
-            fontSize: 13,
-            fontFamily: 'var(--font-stetica-medium)',
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none',
+            gap: 8,
           }}
         >
-          <Box size={14} color="var(--accent-primary)" />
-          3D-планировка
+          <button
+            onClick={toggleAutoRotate}
+            aria-label={isRotating ? 'Остановить вращение' : 'Включить вращение'}
+            className="viewer-btn"
+            style={{
+              background: isRotating
+                ? 'var(--accent-primary)'
+                : 'rgba(24,24,28,0.65)',
+              border: isRotating ? 'none' : '1px solid rgba(255,255,255,0.14)',
+            }}
+          >
+            <RotateCw
+              size={17}
+              strokeWidth={2.2}
+              style={{
+                animation: isRotating ? 'spin 3s linear infinite' : 'none',
+              }}
+            />
+          </button>
+          <button
+            onClick={takeSnapshot}
+            aria-label="Сделать снимок 3D-модели"
+            className="viewer-btn"
+            style={{
+              background: 'rgba(24,24,28,0.65)',
+              border: '1px solid rgba(255,255,255,0.14)',
+            }}
+          >
+            <Camera size={17} strokeWidth={2.2} />
+          </button>
         </div>
-
-        {/* Кнопка снимка — справа снизу */}
-        <button
-          onClick={takeSnapshot}
-          aria-label="Сделать снимок 3D-модели"
-          style={{
-            position: 'absolute',
-            bottom: 14,
-            right: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '8px 16px',
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 999,
-            color: '#fff',
-            fontSize: 13,
-            fontFamily: 'var(--font-stetica-medium)',
-            cursor: 'pointer',
-          }}
-        >
-          <Camera size={15} />
-          Снимок
-        </button>
 
         {/* AR-кнопка — справа сверху (только если есть .usdz) */}
         {resolvedUsdz && (
@@ -341,22 +294,25 @@ export default function Apartment3DViewer({
             slot="ar-button"
             style={{
               position: 'absolute',
-              top: 14,
-              right: 14,
+              top: 12,
+              right: 12,
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              padding: '8px 16px',
-              background: 'var(--accent-primary)',
-              border: 'none',
+              padding: '8px 14px',
+              background: 'rgba(24,24,28,0.65)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255,255,255,0.14)',
               borderRadius: 999,
               color: '#fff',
               fontSize: 13,
+              fontWeight: 600,
               fontFamily: 'var(--font-stetica-medium)',
               cursor: 'pointer',
             }}
           >
-            <Smartphone size={15} />
+            <Smartphone size={15} strokeWidth={2.2} color="var(--accent-primary)" />
             В AR
           </button>
         )}
@@ -383,6 +339,24 @@ export default function Apartment3DViewer({
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        .viewer-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          color: #fff;
+          cursor: pointer;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+          transition: transform 120ms ease, background 160ms ease;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .viewer-btn:active {
+          transform: scale(0.92);
         }
       `}</style>
     </div>

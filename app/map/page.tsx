@@ -4,7 +4,10 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { ICard } from "@/app/types/models";
 import { parsePriceToNumber } from "@/app/shared/utils/price";
 import { getViewedCardIds } from "@/app/shared/utils/viewedCards";
+import { extractDigits } from "@/app/shared/utils/phone";
 import { useToast } from "@/app/components/shared/Toast";
+import { useAppSelector } from "@/app/shared/redux/hooks";
+import { useLeadSubmit } from "@/app/shared/hooks/useLeadSubmit";
 import { MapCanvas, type MapCanvasHandle } from "./components/MapCanvas";
 import {
   MapTopBar,
@@ -52,6 +55,10 @@ export default function MapPage() {
   const { cards, isLoading, fetchError } = useMapCards();
 
   const { show } = useToast();
+  const user = useAppSelector((s) => s.auth.user);
+  const { submit: submitLead } = useLeadSubmit({
+    successMessage: "Заявка на показ отправлена! В скором времени с вами свяжется менеджер",
+  });
 
   // RISK 2 fix — single MapLibre instance. The page never constructs a
   // maplibregl.Map. MapCanvas is the sole owner; we only hold a handle ref
@@ -172,8 +179,21 @@ export default function MapPage() {
   }, []);
 
   const handleSchedule = useCallback(() => {
+    if (!selectedCard) return;
+    const phone = extractDigits(user?.phone_number ?? "");
+    // Авторизован и есть телефон в аккаунте → берём имя+номер из профиля
+    // и отправляем заявку сразу, с toast-уведомлением. Иначе — форма.
+    if (user && phone.length >= 10) {
+      submitLead({
+        kind: "map_viewing",
+        name: user.name ?? "",
+        phone,
+        jk: selectedCard.title,
+      });
+      return;
+    }
     setScheduleOpen(true);
-  }, []);
+  }, [user, selectedCard, submitLead]);
 
   const handleLocate = useCallback((lng: number, lat: number) => {
     mapRef.current?.flyTo(lng, lat, 14);

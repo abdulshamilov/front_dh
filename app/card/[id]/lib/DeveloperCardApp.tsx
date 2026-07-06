@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import type { ICard } from "@/app/types/models";
@@ -46,8 +45,6 @@ export function DeveloperCardApp({ card }: DeveloperCardAppProps) {
   if (card.developer == null) return null;
 
   const developer = card.developer;
-  const hasLogo = !!developer.logo && developer.logo.trim() !== "";
-  const initials = (developer.name || "").trim().slice(0, 2).toUpperCase();
 
   const handleSubscribe = async (
     e: React.MouseEvent<HTMLButtonElement>
@@ -98,19 +95,16 @@ export function DeveloperCardApp({ card }: DeveloperCardAppProps) {
         display: "block",
         width: "100%",
         margin: "12px 0",
-        borderRadius: "8px",
-        // GlassCard: surface base + white linear-gradient overlay,
-        // composited so the 1px border reads as the lighter gradient
-        // edge (background-clip trick: gradient drawn on the border-box,
-        // surface on the padding-box).
-        background:
-          "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.016) 100%), var(--surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        // iOS inset grouped row
+        borderRadius: "16px",
+        background: "var(--surface)",
         textDecoration: "none",
         cursor: "pointer",
         userSelect: "none",
+        WebkitTapHighlightColor: "transparent",
         transform: cardPressed ? "scale(0.98)" : "scale(1)",
-        transition: "transform 120ms ease-out",
+        filter: cardPressed ? "brightness(1.12)" : "none",
+        transition: "transform 140ms ease-out, filter 140ms ease-out",
       }}
     >
       <div
@@ -118,52 +112,23 @@ export function DeveloperCardApp({ card }: DeveloperCardAppProps) {
           display: "flex",
           alignItems: "center",
           gap: "12px",
-          padding: "12px 16px",
+          padding: "12px 12px 12px 14px",
         }}
       >
-        {/* Logo */}
+
+        {/* Info: имя + подпись, как в списках iOS */}
         <div
           style={{
-            position: "relative",
-            width: "48px",
-            height: "48px",
-            borderRadius: "8px",
-            background: "var(--surface-elevated)",
-            overflow: "hidden",
-            flexShrink: 0,
+            flex: 1,
+            minWidth: 0,
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            flexDirection: "column",
+            gap: 2,
           }}
         >
-          {hasLogo ? (
-            <Image
-              src={developer.logo}
-              alt={developer.name || ""}
-              fill
-              sizes="48px"
-              style={{ objectFit: "cover" }}
-            />
-          ) : (
-            <span
-              aria-hidden
-              style={{
-                fontSize: "14px",
-                fontWeight: 700,
-                fontFamily: "var(--font-stetica-bold)",
-                color: "var(--text-secondary)",
-              }}
-            >
-              {initials}
-            </span>
-          )}
-        </div>
-
-        {/* Info */}
-        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontSize: "14px",
+              fontSize: "15px",
               fontWeight: 600,
               fontFamily: "var(--font-stetica-bold)",
               color: "var(--text-primary)",
@@ -174,9 +139,18 @@ export function DeveloperCardApp({ card }: DeveloperCardAppProps) {
           >
             {developer.name}
           </div>
+          <div
+            style={{
+              fontSize: "12px",
+              fontFamily: "var(--font-inter), system-ui, sans-serif",
+              color: "var(--text-tertiary, rgba(255,255,255,0.4))",
+            }}
+          >
+            Жилой комплекс
+          </div>
         </div>
 
-        {/* Subscribe button (CompactSubscribeButton) */}
+        {/* Subscribe — тонированная iOS-пилюля */}
         <button
           type="button"
           onClick={handleSubscribe}
@@ -188,29 +162,47 @@ export function DeveloperCardApp({ card }: DeveloperCardAppProps) {
           onPointerCancel={releaseBtn}
           style={{
             flexShrink: 0,
-            borderRadius: "8px",
-            padding: "8px 12px",
-            fontSize: "12px",
-            fontWeight: 500,
-            fontFamily: "var(--font-stetica-medium)",
+            borderRadius: "100px",
+            padding: "7px 14px",
+            fontSize: "13px",
+            fontWeight: 600,
+            fontFamily: "var(--font-inter), system-ui, sans-serif",
             cursor: isLoading ? "wait" : "pointer",
-            opacity: isLoading ? 0.7 : 1,
+            opacity: isLoading ? 0.6 : 1,
             userSelect: "none",
+            border: "none",
             background: isSubscribed
-              ? "var(--surface)"
-              : "var(--accent-primary)",
+              ? "rgba(255,255,255,0.08)"
+              : "rgba(0,117,255,0.16)",
             color: isSubscribed
               ? "var(--text-secondary)"
-              : "var(--text-primary)",
-            border: isSubscribed
-              ? "1px solid var(--divider)"
-              : "1px solid transparent",
-            transform: btnPressed ? "scale(0.95)" : "scale(1)",
-            transition: "transform 120ms ease-out",
+              : "var(--accent-primary)",
+            transform: btnPressed ? "scale(0.94)" : "scale(1)",
+            transition:
+              "transform 140ms ease-out, background 160ms ease, color 160ms ease",
+            WebkitTapHighlightColor: "transparent",
           }}
         >
           {isSubscribed ? "Подписаны" : "Подписаться"}
         </button>
+
+        {/* Шеврон — подсказка, что карточка ведёт на страницу ЖК */}
+        <svg
+          width="8"
+          height="14"
+          viewBox="0 0 8 14"
+          fill="none"
+          aria-hidden
+          style={{ flexShrink: 0, marginLeft: 2 }}
+        >
+          <path
+            d="M1 1l6 6-6 6"
+            stroke="rgba(255,255,255,0.25)"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
     </Link>
   );

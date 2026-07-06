@@ -170,7 +170,7 @@ export function MapScheduleModal({ isOpen, onClose, jk }: MapScheduleModalProps)
                 lineHeight: 1.5,
               }}
             >
-              Менеджер свяжется с вами в течение&nbsp;15&nbsp;минут
+              В скором времени с вами свяжется менеджер
             </div>
           </div>
         ) : (

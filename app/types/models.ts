@@ -176,6 +176,8 @@ export interface ICard {
   created_at: string;
   is_favorite?: boolean;
   is_hidden?: boolean;
+  /** Закреплённая карточка (админ отметил в бэкенде). Показывается в блоке «Популярное». */
+  is_pinned?: boolean;
   old_price?: number;
   floor?: number;
   total_floors?: number;

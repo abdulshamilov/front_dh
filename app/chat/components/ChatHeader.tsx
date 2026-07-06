@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Heart, Bell, User } from "lucide-react";
+import { NotificationBell } from "@/app/components/NotificationBell";
+import { useAppSelector } from "@/app/shared/redux/hooks";
+import { useToast } from "@/app/components/shared/Toast";
 
 interface ChatHeaderProps {
   onBack: () => void;
@@ -13,6 +16,17 @@ interface ChatHeaderProps {
 export function ChatHeader({ onBack }: ChatHeaderProps) {
   const router = useRouter();
   const [isDesktop, setIsDesktop] = useState<boolean>(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const { isAuth } = useAppSelector((s) => s.auth);
+  const { show: toast } = useToast();
+
+  const onNotifClick = () => {
+    if (!isAuth) {
+      toast("Войдите, чтобы видеть уведомления", { type: "info" });
+      return;
+    }
+    setNotifOpen((p) => !p);
+  };
 
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 1024px)");
@@ -56,14 +70,17 @@ export function ChatHeader({ onBack }: ChatHeaderProps) {
           >
             <Heart size={iconSize} strokeWidth={2} color="#FFFFFF" />
           </button>
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            aria-label="Уведомления"
-            className="chat-header__ghost"
-          >
-            <Bell size={iconSize} strokeWidth={2} color="#FFFFFF" />
-          </button>
+          <div style={{ position: "relative" }}>
+            <button
+              type="button"
+              onClick={onNotifClick}
+              aria-label="Уведомления"
+              className="chat-header__ghost"
+            >
+              <Bell size={iconSize} strokeWidth={2} color="#FFFFFF" />
+            </button>
+            {notifOpen && <NotificationBell onClose={() => setNotifOpen(false)} />}
+          </div>
           <button
             type="button"
             onClick={() => router.push("/profile")}

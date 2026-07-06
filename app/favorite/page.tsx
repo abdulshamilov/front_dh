@@ -9,12 +9,10 @@ import {
   Check,
   RefreshCw,
   Calendar,
-  Share2,
 } from "lucide-react";
 import ProtectedRoute from "../components/ProtectedRoute";
 import type { ICard } from "../types/models";
 import { ListingsGrid } from "../components/home/ListingsGrid";
-import { AiBanner } from "../components/home/AiBanner";
 import { PageHero } from "../components/shared/PageHero";
 import { EmptyState } from "../components/shared/EmptyState";
 import { Chip } from "../components/shared/Chip";
@@ -74,28 +72,6 @@ function FavoriteContent() {
   const isReallyFavorites = isFavoritesPage === true;
   const cardsCount = isReallyFavorites ? cards?.length ?? 0 : 0;
 
-  // Share подборки (MVP — base64 ID в URL)
-  const handleShare = useCallback(async () => {
-    if (cardsCount === 0) return;
-    const ids = (cards ?? []).map((c) => c.id).join(",");
-    const encoded = typeof window !== "undefined" ? btoa(ids) : "";
-    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/saved/${encoded}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "Моя подборка квартир",
-          text: `Подборка из ${cardsCount} ${objectsWord(cardsCount)} в Dream House`,
-          url,
-        });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast("Ссылка скопирована", { type: "success", duration: 3000 });
-      }
-    } catch {
-      // user cancelled
-    }
-  }, [cards, cardsCount, toast]);
-
   return (
     <div
       className="flex flex-col items-center font-[family-name:var(--font-stetica-regular)]"
@@ -123,30 +99,6 @@ function FavoriteContent() {
                 : !loading && cardsCount === 0
                   ? "Здесь появятся объекты, которые вы добавите"
                   : "Загрузка..."
-            }
-            actions={
-              cardsCount > 0 ? (
-                <button
-                  type="button"
-                  onClick={handleShare}
-                  aria-label="Поделиться подборкой"
-                  className="press-scale"
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    background: "var(--surface-elevated)",
-                    border: "1px solid var(--border-color)",
-                    color: "var(--text-secondary)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                  }}
-                >
-                  <Share2 size={18} strokeWidth={2} />
-                </button>
-              ) : undefined
             }
           />
 
@@ -191,7 +143,7 @@ function FavoriteContent() {
             tone="primary"
             icon={<Calendar size={20} strokeWidth={2.4} />}
             title="Записаться на показ"
-            description="Соберём маршрут по выбранным квартирам — менеджер свяжется через 15 минут"
+            description="Соберём маршрут по выбранным квартирам — в скором времени с вами свяжется менеджер"
             cta="Открыть форму"
             onClick={() => setShowScheduleSheet(true)}
           />
@@ -277,16 +229,6 @@ function FavoriteContent() {
         )}
 
         {/* Cross-sell AI */}
-        {!loading && !error && cardsCount > 0 && (
-          <div className="mt-1">
-            <AiBanner
-              title="Подбор с AI"
-              subtitle="Найдём похожие на ваши избранные"
-              href="/chat"
-              ariaLabel="Подобрать похожие на избранные с AI"
-            />
-          </div>
-        )}
       </div>
 
       {/* Schedule viewing sheet */}

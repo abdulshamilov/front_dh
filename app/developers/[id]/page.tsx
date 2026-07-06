@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Bell, BellOff, Building2 } from "lucide-react";
-import Image from "next/image";
+import { ChevronLeft, Bell, BellOff, Building2 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
 import {
   fetchDeveloperById,
@@ -25,14 +24,50 @@ function CardSkeleton() {
   return (
     <div style={{
       borderRadius: 16, overflow: "hidden",
-      background: "rgba(255,255,255,0.04)",
-      border: "1px solid rgba(255,255,255,0.06)",
+      background: "var(--home-surface, #1D2024)",
     }}>
       <div style={{ aspectRatio: "5/6", background: "rgba(255,255,255,0.05)", animation: "pulse 1.5s ease-in-out infinite" }} />
       <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ height: 14, width: "55%", borderRadius: 7, background: "rgba(255,255,255,0.06)", animation: "pulse 1.5s ease-in-out infinite" }} />
         <div style={{ height: 12, width: "80%", borderRadius: 7, background: "rgba(255,255,255,0.04)", animation: "pulse 1.5s ease-in-out infinite 0.15s" }} />
         <div style={{ height: 12, width: "45%", borderRadius: 7, background: "rgba(255,255,255,0.04)", animation: "pulse 1.5s ease-in-out infinite 0.3s" }} />
+      </div>
+    </div>
+  );
+}
+
+function NavBar({ onBack }: { onBack: () => void }) {
+  return (
+    <div style={{
+      position: "sticky", top: 0, zIndex: 20,
+      background: "rgba(7,7,7,0.72)",
+      WebkitBackdropFilter: "saturate(180%) blur(20px)",
+      backdropFilter: "saturate(180%) blur(20px)",
+      borderBottom: "0.5px solid rgba(255,255,255,0.08)",
+    }}>
+      <div style={{
+        maxWidth: 980, margin: "0 auto",
+        display: "grid", gridTemplateColumns: "1fr auto 1fr",
+        alignItems: "center", height: 48, padding: "0 8px",
+      }}>
+        <button
+          onClick={onBack}
+          style={{
+            justifySelf: "start",
+            display: "inline-flex", alignItems: "center", gap: 1,
+            padding: "6px 10px 6px 2px", borderRadius: 10,
+            background: "transparent", border: "none", cursor: "pointer",
+            color: "var(--home-accent, #0075FF)",
+            fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
+            fontSize: 16,
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <ChevronLeft size={24} strokeWidth={2.4} style={{ marginRight: -2 }} />
+          Назад
+        </button>
+        <span />
+        <span />
       </div>
     </div>
   );
@@ -68,13 +103,15 @@ export default function DeveloperDetailPage() {
   if (loading) {
     return (
       <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh" }}>
-        {/* Header skeleton */}
+        <NavBar onBack={() => router.back()} />
         <div style={{
-          height: 220,
-          background: "linear-gradient(160deg, #1A1835 0%, #111022 100%)",
-          animation: "pulse 1.5s ease-in-out infinite",
-        }} />
-        <div style={{ maxWidth: 1300, margin: "0 auto", padding: "32px 16px" }}>
+          maxWidth: 980, margin: "0 auto", padding: "28px 16px 0",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 14,
+        }}>
+          <div style={{ height: 26, width: 200, borderRadius: 8, background: "rgba(255,255,255,0.06)", animation: "pulse 1.5s ease-in-out infinite" }} />
+          <div style={{ height: 14, width: 110, borderRadius: 7, background: "rgba(255,255,255,0.045)", animation: "pulse 1.5s ease-in-out infinite 0.15s" }} />
+        </div>
+        <div style={{ maxWidth: 980, margin: "0 auto", padding: "32px 16px" }}>
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
@@ -89,9 +126,16 @@ export default function DeveloperDetailPage() {
 
   if (error || !currentDeveloper) {
     return (
-      <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-inter), system-ui, sans-serif", fontSize: 15 }}>
-          {error || "Жилой комплекс не найден"}
+      <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh" }}>
+        <NavBar onBack={() => router.back()} />
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+          padding: "120px 20px 0", textAlign: "center",
+        }}>
+          <Building2 size={36} strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.18)" }} />
+          <span style={{ color: "rgba(255,255,255,0.35)", fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif", fontSize: 15 }}>
+            {error || "Жилой комплекс не найден"}
+          </span>
         </div>
       </div>
     );
@@ -102,118 +146,75 @@ export default function DeveloperDetailPage() {
 
   return (
     <div style={{ backgroundColor: "var(--bg-primary)", minHeight: "100vh" }}>
+      <NavBar onBack={() => router.back()} />
 
-      {/* ── Hero header ── */}
+      {/* ── Profile (iOS contact style) ── */}
       <div style={{
-        background: "linear-gradient(160deg, #1A1835 0%, #151228 55%, var(--bg-primary) 100%)",
-        position: "relative",
-        overflow: "hidden",
-        paddingBottom: 40,
+        maxWidth: 980, margin: "0 auto", padding: "28px 16px 8px",
+        display: "flex", flexDirection: "column", alignItems: "center",
+        textAlign: "center", gap: 14,
       }}>
-        {/* Decorative glow */}
-        <div aria-hidden style={{
-          position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)",
-          width: 600, height: 400, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,117,255,0.07) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }} />
-
-        {/* Back button */}
-        <div style={{ maxWidth: 1300, margin: "0 auto", padding: "16px 16px 0" }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 7,
-              padding: "8px 14px 8px 10px", borderRadius: 20,
-              background: "rgba(255,255,255,0.07)", border: "none",
-              color: "rgba(255,255,255,0.6)", fontSize: 13, cursor: "pointer",
-              fontFamily: "var(--font-inter), system-ui, sans-serif",
-            }}
-          >
-            <ArrowLeft size={15} />
-            Все комплексы
-          </button>
-        </div>
-
-        {/* Developer info */}
-        <div style={{
-          maxWidth: 1300, margin: "0 auto", padding: "28px 16px 0",
-          display: "flex", flexDirection: "column", alignItems: "center",
-          textAlign: "center", gap: 16,
-        }}>
-          {/* Logo */}
-          <div style={{
-            width: 96, height: 96, borderRadius: 20,
-            background: "#FFFFFF",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            overflow: "hidden", padding: 10,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+        {/* Name */}
+        <div>
+          <h1 style={{
+            margin: 0,
+            fontFamily: "var(--font-stetica-bold), -apple-system, system-ui, sans-serif",
+            fontSize: "clamp(24px, 4vw, 32px)",
+            color: "#FFFFFF",
+            lineHeight: 1.15,
+            letterSpacing: "-0.022em",
           }}>
-            {currentDeveloper.logo ? (
-              <Image src={currentDeveloper.logo} alt={currentDeveloper.name} width={76} height={76} style={{ objectFit: "contain", width: "100%", height: "100%" }} />
-            ) : (
-              <Building2 size={40} color="#888" strokeWidth={1.5} />
-            )}
-          </div>
-
-          {/* Name */}
-          <div>
-            <h1 style={{
-              margin: 0,
-              fontFamily: "var(--font-stetica-bold), system-ui, sans-serif",
-              fontSize: "clamp(22px, 4vw, 36px)",
-              color: "#FFFFFF",
-              lineHeight: 1.1,
-              letterSpacing: "-0.02em",
+            {currentDeveloper.name}
+          </h1>
+          {count > 0 && (
+            <p style={{
+              margin: "5px 0 0",
+              fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
+              fontSize: 14, color: "rgba(255,255,255,0.38)",
             }}>
-              {currentDeveloper.name}
-            </h1>
-            {count > 0 && (
-              <p style={{
-                margin: "6px 0 0",
-                fontFamily: "var(--font-inter), system-ui, sans-serif",
-                fontSize: 14, color: "rgba(255,255,255,0.35)",
-              }}>
-                {count} {objectsWord(count)}
-              </p>
-            )}
-          </div>
-
-          {/* Subscribe button */}
-          <button
-            onClick={handleSubscribe}
-            disabled={subLoading}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "11px 22px", borderRadius: 14,
-              cursor: subLoading ? "not-allowed" : "pointer",
-              opacity: subLoading ? 0.6 : 1,
-              fontFamily: "var(--font-stetica-bold), system-ui, sans-serif",
-              fontSize: 14,
-              background: subscribed ? "rgba(255,255,255,0.08)" : "#0075FF",
-              color: subscribed ? "rgba(255,255,255,0.7)" : "#FFFFFF",
-              border: subscribed ? "1px solid rgba(255,255,255,0.12)" : "none",
-              transition: "all 0.2s",
-            }}
-          >
-            {subscribed ? <BellOff size={15} /> : <Bell size={15} />}
-            {subscribed ? "Отписаться" : "Подписаться на ЖК"}
-          </button>
+              {count} {objectsWord(count)}
+            </p>
+          )}
         </div>
+
+        {/* Subscribe — iOS tinted pill */}
+        <button
+          onClick={handleSubscribe}
+          disabled={subLoading}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 7,
+            padding: "10px 20px", borderRadius: 100,
+            cursor: subLoading ? "not-allowed" : "pointer",
+            opacity: subLoading ? 0.55 : 1,
+            fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
+            fontSize: 15, fontWeight: 600,
+            background: subscribed ? "rgba(255,255,255,0.08)" : "var(--home-accent-soft, rgba(0,117,255,0.14))",
+            color: subscribed ? "rgba(255,255,255,0.6)" : "var(--home-accent, #0075FF)",
+            border: "none",
+            transition: "background 160ms ease, color 160ms ease, opacity 160ms ease",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          {subscribed ? <BellOff size={16} strokeWidth={2.2} /> : <Bell size={16} strokeWidth={2.2} />}
+          {subscribed ? "Отписаться" : "Подписаться"}
+        </button>
       </div>
 
       {/* ── Listings ── */}
-      <div style={{ maxWidth: 1300, margin: "0 auto", padding: "32px 16px 80px" }}>
+      <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 80px" }}>
         {count > 0 ? (
           <>
-            <h2 style={{
-              margin: "0 0 16px",
-              fontFamily: "var(--font-stetica-bold), system-ui, sans-serif",
-              fontSize: 20, color: "#FFFFFF", letterSpacing: "-0.01em",
+            <p style={{
+              margin: "0 0 8px",
               padding: "0 16px",
+              fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
+              fontSize: 13,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: "rgba(255,255,255,0.35)",
             }}>
               Объекты
-            </h2>
+            </p>
             <div className="dev-cards-grid">
               {currentDeveloper.cards.map((card) => (
                 <PropertyCard key={card.id} card={card} />
@@ -222,12 +223,12 @@ export default function DeveloperDetailPage() {
           </>
         ) : (
           <div style={{
-            textAlign: "center", padding: "80px 20px",
-            background: "rgba(255,255,255,0.02)", borderRadius: 20,
-            border: "1px solid rgba(255,255,255,0.05)",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+            textAlign: "center", padding: "56px 20px",
+            background: "var(--home-surface, #1D2024)", borderRadius: 16,
           }}>
-            <Building2 size={40} color="rgba(255,255,255,0.15)" strokeWidth={1.5} style={{ margin: "0 auto 16px" }} />
-            <p style={{ fontFamily: "var(--font-inter), system-ui, sans-serif", fontSize: 15, color: "rgba(255,255,255,0.3)", margin: 0 }}>
+            <Building2 size={36} color="rgba(255,255,255,0.18)" strokeWidth={1.5} />
+            <p style={{ fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif", fontSize: 15, color: "rgba(255,255,255,0.3)", margin: 0 }}>
               Объектов пока нет
             </p>
           </div>

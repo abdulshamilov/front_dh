@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import axiosInstance from "@/app/shared/config/axios";
 import { useToast } from "@/app/components/shared/Toast";
-import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
+import { useAppDispatch } from "@/app/shared/redux/hooks";
+import { useRequireAuth } from "@/app/shared/hooks/useRequireAuth";
 import { toggleFavorite, updateCardFavorite } from "@/app/shared/redux/slices/cards";
 import { buildWhatsappLink } from "@/app/shared/utils/contacts";
 import { markCardViewed } from "@/app/shared/utils/viewedCards";
@@ -27,7 +28,7 @@ export interface UseCardActions {
 export function useCardActions(card: ICard): UseCardActions {
   const dispatch = useAppDispatch();
   const { show: toast } = useToast();
-  const isAuth = useAppSelector((state) => state.auth.isAuth);
+  const requireAuth = useRequireAuth();
 
   const [isFavorite, setIsFavorite] = useState<boolean>(
     Boolean(card.is_favorite)
@@ -47,10 +48,7 @@ export function useCardActions(card: ICard): UseCardActions {
   }, [card.id]);
 
   const toggleFav = useCallback(() => {
-    if (!isAuth) {
-      toast("Войдите, чтобы добавить в избранное", { type: "info" });
-      return;
-    }
+    if (!requireAuth()) return;
 
     // Current state — the thunk deletes when currently favorite, posts otherwise.
     const current = isFavorite;
@@ -68,7 +66,7 @@ export function useCardActions(card: ICard): UseCardActions {
         dispatch(updateCardFavorite({ id: card.id, is_favorite: current }));
         toast("Не удалось изменить статус избранного", { type: "error" });
       });
-  }, [isAuth, isFavorite, card.id, dispatch, toast]);
+  }, [requireAuth, isFavorite, card.id, dispatch, toast]);
 
   const share = useCallback(async () => {
     if (typeof window === "undefined") return;

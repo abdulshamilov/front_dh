@@ -482,18 +482,11 @@ export function SelectedCardSheet({
             <div
               style={{
                 display: "flex",
+                flexDirection: "column",
                 gap: 8,
                 marginTop: 14,
               }}
             >
-              <ButtonLink
-                href={`/card/${card.id}`}
-                variant="ghost"
-                size="md"
-                fullWidth
-              >
-                Перейти к объекту
-              </ButtonLink>
               <Button
                 variant="primary"
                 size="md"
@@ -502,6 +495,14 @@ export function SelectedCardSheet({
               >
                 Записаться на показ
               </Button>
+              <ButtonLink
+                href={`/card/${card.id}`}
+                variant="ghost"
+                size="md"
+                fullWidth
+              >
+                Перейти к объекту
+              </ButtonLink>
             </div>
 
             {onToggleCompare && (

@@ -272,7 +272,7 @@ export function PricingSection({ cardId }: { cardId: number }) {
           </div>
           <div style={{
             fontSize: 36, fontFamily: "var(--font-stetica-bold)", lineHeight: 1,
-            color: calcLoading ? "rgba(255,160,0,0.3)" : "#FFA000",
+            color: calcLoading ? "rgba(0,117,255,0.3)" : BLUE,
             transition: "color 0.15s",
           }}>
             {formatPrice(Math.round(Number(monthly)))} ₽

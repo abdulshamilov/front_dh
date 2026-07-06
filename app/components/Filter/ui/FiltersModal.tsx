@@ -158,7 +158,7 @@ export const FiltersModal = memo(function FiltersModal({
           <RangeSlider
             label="Стоимость"
             min={0}
-            max={100000000}
+            max={50000000}
             step={100000}
             valueMin={localFilters.price_min}
             valueMax={localFilters.price_max}
@@ -238,17 +238,6 @@ export const FiltersModal = memo(function FiltersModal({
             valueMax={localFilters.floors_max}
             onChangeMin={(v) => updateField("floors_min", v)}
             onChangeMax={(v) => updateField("floors_max", v)}
-          />
-          <RangeSlider
-            label="Высота потолков"
-            min={2.0}
-            max={5.0}
-            step={0.1}
-            valueMin={localFilters.ceiling_height_min}
-            valueMax={localFilters.ceiling_height_max}
-            onChangeMin={(v) => updateField("ceiling_height_min", v)}
-            onChangeMax={(v) => updateField("ceiling_height_max", v)}
-            formatValue={(v) => `${v.toFixed(1)} м`}
           />
         </FilterGroup>
 

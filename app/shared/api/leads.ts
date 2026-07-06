@@ -62,8 +62,9 @@ export type LeadPayload =
       kind: "schedule_viewing";
       phone_number: string;
       card_ids: number[];
-      date: string; // YYYY-MM-DD
-      time: string; // HH:MM
+      /** Не переданы — менеджер согласует время по телефону. */
+      date?: string; // YYYY-MM-DD
+      time?: string; // HH:MM
       name?: string;
     }
   | {
@@ -178,10 +179,11 @@ export async function submitLead(payload: LeadPayload): Promise<void> {
         const targetCardId = payload.card_ids[0] ?? FALLBACK_CARD_ID;
         const otherCards = payload.card_ids.slice(1);
         const cardsTail = otherCards.length > 0 ? `, +${otherCards.join(",")}` : "";
-        const note = buildPreferredTime(
-          `Показ ${payload.date} в ${payload.time}${cardsTail}`,
-          utm.utm_source
-        );
+        const when =
+          payload.date && payload.time
+            ? `${payload.date} в ${payload.time}`
+            : "время согласовать";
+        const note = buildPreferredTime(`Показ ${when}${cardsTail}`, utm.utm_source);
         await axiosInstance.post(
           `/cards/${targetCardId}/call_request/`,
           {

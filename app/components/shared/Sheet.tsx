@@ -134,12 +134,15 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
           </button>
         </div>
 
-        {/* Content scroll */}
+        {/* Content scroll — только по вертикали, горизонталь зафиксирована */}
         <div
           style={{
-            overflow: "auto",
+            overflowY: "auto",
+            overflowX: "hidden",
             padding: "16px 20px",
             flex: 1,
+            width: "100%",
+            boxSizing: "border-box",
             background: "var(--bg-primary)",
           }}
         >

@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Heart, MapPin, Box } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/app/shared/redux/hooks";
+import { useAppDispatch } from "@/app/shared/redux/hooks";
 import {
   toggleFavorite,
   updateCardFavorite,
 } from "@/app/shared/redux/slices/cards";
 import { ICard } from "@/app/types/models";
+import { useRequireAuth } from "@/app/shared/hooks/useRequireAuth";
 import { parsePriceToNumber } from "@/app/shared/utils/price";
 import { buildWhatsappLink } from "@/app/shared/utils/contacts";
 import { CardImageCarousel } from "./CardImageCarousel";
@@ -36,9 +37,9 @@ function resolveTag(card: ICard, price: number): StatusTag | null {
   if (rating >= 4.7 && (card.rating_count ?? 0) >= 3) return "HOT";
   const ms = Date.parse(card.created_at || "");
   if (!isNaN(ms) && ms > 0) {
-    // NEW: created within last 7 days
+    // NEW: created within last 2 days
     const ageMs = Date.now() - ms;
-    if (ageMs >= 0 && ageMs < 7 * 24 * 60 * 60 * 1000) return "NEW";
+    if (ageMs >= 0 && ageMs < 2 * 24 * 60 * 60 * 1000) return "NEW";
   }
   return null;
 }
@@ -87,7 +88,7 @@ interface PropertyCardProps {
 
 function PropertyCardImpl({ card, variant = "default", showWhatsapp = false, showInstallmentBadge = false }: PropertyCardProps) {
   const dispatch = useAppDispatch();
-  const { isAuth } = useAppSelector((state) => state.auth);
+  const requireAuth = useRequireAuth();
   const [showHeart, setShowHeart] = useState(false);
   const lastTapRef = useRef(0);
 
@@ -124,10 +125,7 @@ function PropertyCardImpl({ card, variant = "default", showWhatsapp = false, sho
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!isAuth) {
-        alert("Войдите в систему, чтобы добавить в избранное");
-        return;
-      }
+      if (!requireAuth()) return;
       const current = !!card.is_favorite;
       // Optimistic flip
       dispatch(updateCardFavorite({ id: card.id, is_favorite: !current }));
@@ -142,7 +140,7 @@ function PropertyCardImpl({ card, variant = "default", showWhatsapp = false, sho
         }
       );
     },
-    [card, dispatch, isAuth]
+    [card, dispatch, requireAuth]
   );
 
   const handleDoubleTap = useCallback(
@@ -154,7 +152,10 @@ function PropertyCardImpl({ card, variant = "default", showWhatsapp = false, sho
         // Double tap detected — prevent link navigation
         e.preventDefault();
         e.stopPropagation();
-        if (!card.is_favorite && isAuth) {
+        lastTapRef.current = 0;
+        // Гость — ведём на регистрацию (как и на кнопке избранного).
+        if (!requireAuth()) return;
+        if (!card.is_favorite) {
           // Instagram-style: only add to favorites on double-tap
           dispatch(updateCardFavorite({ id: card.id, is_favorite: true }));
           dispatch(
@@ -168,17 +169,12 @@ function PropertyCardImpl({ card, variant = "default", showWhatsapp = false, sho
           });
           setShowHeart(true);
           setTimeout(() => setShowHeart(false), 1000);
-        } else if (!card.is_favorite && !isAuth) {
-          // Still show visual feedback, but don't persist
-          setShowHeart(true);
-          setTimeout(() => setShowHeart(false), 1000);
         }
-        lastTapRef.current = 0;
         return;
       }
       lastTapRef.current = now;
     },
-    [card, isAuth, dispatch]
+    [card, requireAuth, dispatch]
   );
 
   return (
