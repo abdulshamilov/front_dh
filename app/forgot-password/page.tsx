@@ -4,7 +4,6 @@ import Link from "next/link";
 import PublicRoute from "@/app/components/PublicRoute";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "@/app/shared/contexts/ThemeContext";
 import { OtpInput } from "@/app/shared/components/OtpInput";
 import axiosInstance from "@/app/shared/config/axios";
 import { getErrorMessage } from "@/app/shared/types/errors";
@@ -13,8 +12,6 @@ type Step = "email" | "otp" | "new-password";
 
 function ForgotPasswordContent() {
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -25,10 +22,6 @@ function ForgotPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  useState(() => {
-    setMounted(true);
-  });
 
   const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,41 +111,6 @@ function ForgotPasswordContent() {
         transition: "background 0.3s ease",
       }}
     >
-      {mounted && (
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50">
-          <svg
-            width="34"
-            height="18"
-            className="w-[34px] h-[18px] flex-shrink-0 cursor-pointer transition-all duration-300"
-            viewBox="0 0 34 18"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            onClick={toggleTheme}
-            style={{ cursor: "pointer" }}
-          >
-            <rect
-              x="0.5"
-              y="1"
-              width="33"
-              height="16"
-              rx="8"
-              stroke="var(--border-color)"
-              style={{ transition: "stroke 0.3s ease" }}
-            />
-            <circle
-              cx={theme === "dark" ? "24.5" : "9.5"}
-              cy="9"
-              r="5"
-              fill="var(--bg-primary)"
-              stroke="var(--accent-primary)"
-              style={{
-                transition: "cx 0.3s ease, fill 0.3s ease, stroke 0.3s ease",
-              }}
-            />
-          </svg>
-        </div>
-      )}
-
       <div
         className="glass w-full max-w-md p-8 sm:p-10"
         style={{

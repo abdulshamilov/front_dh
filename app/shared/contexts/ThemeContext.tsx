@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect } from "react";
 
 type Theme = "light" | "dark";
 
@@ -11,38 +11,24 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+/**
+ * Светлая тема выпилена: сайт всегда тёмный. Провайдер оставлен, чтобы
+ * не ломать useTheme-потребителей, но всегда отдаёт "dark", а
+ * toggleTheme — no-op. Сохранённое в localStorage значение "light"
+ * перезаписывается, чтобы старые посетители тоже получили тёмную тему.
+ */
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
     try {
-      const saved = localStorage.getItem("theme") as Theme | null;
-      if (saved) {
-        setTheme(saved);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem("theme", theme);
+      document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("theme", "dark");
     } catch {
       // ignore (SSR safety)
     }
-  }, [theme, mounted]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-  };
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: "dark", toggleTheme: () => {} }}>
       {children}
     </ThemeContext.Provider>
   );
