@@ -1,17 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { IRegisterForm } from "@/app/types";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { User, Phone } from "lucide-react";
+import { Phone } from "lucide-react";
 import { useAppDispatch } from "@/app/shared/redux/hooks";
 import { setUser, fetchUser } from "@/app/shared/redux/slices/auth";
 import PublicRoute from "@/app/components/PublicRoute";
 import { useOtpTimer } from "@/app/shared/hooks/useOtpTimer";
 import { OtpInput } from "@/app/shared/components/OtpInput";
 import { requestRegisterSms, confirmRegisterSms } from "./lib/api";
+import { requestSms, verifySms } from "@/app/login/lib/api";
 import { normalizePhone, formatPhone } from "./lib/utils";
 import { getErrorMessage } from "@/app/shared/types/errors";
 import {
@@ -23,17 +21,28 @@ import {
   AuthField,
 } from "@/app/components/auth/AuthShell";
 
+/**
+ * Единый вход по номеру телефона — без отдельной регистрации.
+ * Имя не спрашиваем: новые аккаунты создаются с именем DEFAULT_NAME
+ * (пользователь может поменять его в профиле). Сначала пробуем
+ * регистрацию (создаёт аккаунт и шлёт код); если номер уже
+ * зарегистрирован — прозрачно переключаемся на обычный вход по SMS.
+ */
+const DEFAULT_NAME = "безымянный";
+
 function RegisterContent() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<"info" | "otp">("info");
+  const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [name, setName] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
   const [otp, setOtp] = useState("");
   const [requestingCode, setRequestingCode] = useState(false);
+  // Каким путём отправили код: register (новый номер) или login (существующий).
+  const [flow, setFlow] = useState<"register" | "login">("register");
 
   const refFromUrl = searchParams.get("ref") || searchParams.get("ref_code");
   const [refCode, setRefCode] = useState<string | undefined>(() => {
@@ -56,22 +65,31 @@ function RegisterContent() {
     initialSeconds: 60,
   });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<IRegisterForm>();
+  const sendCode = async (normalizedPhone: string) => {
+    try {
+      const res = await requestRegisterSms(DEFAULT_NAME, normalizedPhone);
+      if (res.detail || res.ok) {
+        setFlow("register");
+        return true;
+      }
+      return false;
+    } catch {
+      // Номер уже зарегистрирован (или register не прошёл) — обычный вход.
+      const res = await requestSms(normalizedPhone);
+      if (res.detail) {
+        setFlow("login");
+        return true;
+      }
+      return false;
+    }
+  };
 
-  const onRequestCode: SubmitHandler<IRegisterForm> = async (data) => {
+  const onRequestCode = async (phone: string) => {
     setError(null);
     setRequestingCode(true);
     try {
-      const normalizedPhone = normalizePhone(data.phone_number);
-      const trimmedName = data.name.trim();
-      setName(trimmedName);
-      const res = await requestRegisterSms(trimmedName, normalizedPhone);
-      if (res.detail || res.ok) {
+      const normalizedPhone = normalizePhone(phone);
+      if (await sendCode(normalizedPhone)) {
         setPhoneNumber(normalizedPhone);
         setStep("otp");
         startTimer();
@@ -83,21 +101,20 @@ function RegisterContent() {
     }
   };
 
-  const onConfirmRegister = async () => {
+  const onConfirm = async () => {
     if (otp.length !== 6) return;
-    if (!name || !name.trim()) {
-      setError("Имя не указано. Вернитесь назад и заполните форму заново.");
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const res = await confirmRegisterSms({
-        phone_number: phoneNumber,
-        otp,
-        name: name.trim(),
-        ref_code: refCode,
-      });
+      const res =
+        flow === "register"
+          ? await confirmRegisterSms({
+              phone_number: phoneNumber,
+              otp,
+              name: DEFAULT_NAME,
+              ref_code: refCode,
+            })
+          : await verifySms(phoneNumber, otp);
       localStorage.setItem("access_token", res.access);
       localStorage.setItem("refresh_token", res.refresh);
       if (refCode) localStorage.removeItem("ref_code");
@@ -106,7 +123,7 @@ function RegisterContent() {
       } else {
         await dispatch(fetchUser());
       }
-      router.push("/");
+      router.push(searchParams.get("next") || "/");
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Ошибка верификации кода"));
       setOtp("");
@@ -120,8 +137,7 @@ function RegisterContent() {
     setRequestingCode(true);
     setOtp("");
     try {
-      const res = await requestRegisterSms(name, phoneNumber);
-      if (res.detail || res.ok) startTimer();
+      if (await sendCode(phoneNumber)) startTimer();
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Ошибка повторной отправки SMS"));
     } finally {
@@ -132,96 +148,53 @@ function RegisterContent() {
   const handleOtpChange = (value: string) => {
     setOtp(value);
     setError(null);
-    if (value.length === 6) onConfirmRegister();
+    if (value.length === 6) onConfirm();
   };
 
-  const handleBackToInfo = () => {
-    setStep("info");
+  const handleBackToPhone = () => {
+    setStep("phone");
     setOtp("");
     resetTimer();
     setError(null);
   };
 
-  const onBack = () => (step === "otp" ? handleBackToInfo() : router.push("/"));
+  const onBack = () => (step === "otp" ? handleBackToPhone() : router.push("/"));
 
   return (
     <AuthShell onBack={onBack}>
-      {step === "info" ? (
+      {step === "phone" ? (
         <>
-          <AuthTitle line1="Создать" line2="аккаунт" />
-          <AuthSubtitle>Как вас зовут и на какой номер выслать код</AuthSubtitle>
+          <AuthTitle line1="Вход" line2="по номеру" />
+          <AuthSubtitle>Укажите номер телефона — вышлем код для входа</AuthSubtitle>
 
           {error && <AuthError>{error}</AuthError>}
 
-          <form onSubmit={handleSubmit(onRequestCode)} className="mt-8 flex flex-col gap-4">
-            <div>
-              <AuthField icon={<User size={18} />}>
-                <input
-                  {...register("name", {
-                    required: "Это поле является обязательным",
-                    minLength: { value: 2, message: "Минимум 2 символа" },
-                    maxLength: { value: 25, message: "Максимум 25 символов" },
-                    pattern: {
-                      value: /^[а-яА-ЯёЁa-zA-Z\s-]+$/,
-                      message: "Только буквы, пробелы и дефисы",
-                    },
-                  })}
-                  placeholder="Ваше имя"
-                  autoComplete="name"
-                  className="w-full bg-transparent outline-none text-[16px] font-[family-name:var(--font-stetica-regular)]"
-                  style={{ color: "var(--text-primary)" }}
-                />
-              </AuthField>
-              {errors.name && (
-                <span className="text-[13px] mt-1.5 block" style={{ color: "var(--error)" }}>
-                  {errors.name.message}
-                </span>
-              )}
-            </div>
-
-            <div>
-              <AuthField icon={<Phone size={18} />}>
-                <input
-                  {...register("phone_number", {
-                    required: "Это поле является обязательным",
-                    validate: (value) =>
-                      value.replace(/\D/g, "").length >= 11 ||
-                      "Введите корректный номер телефона",
-                  })}
-                  placeholder="+7 (___) ___-__-__"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  onChange={(e) =>
-                    setValue("phone_number", formatPhone(e.target.value), {
-                      shouldValidate: true,
-                    })
-                  }
-                  className="w-full bg-transparent outline-none text-[16px] font-[family-name:var(--font-stetica-regular)]"
-                  style={{ color: "var(--text-primary)" }}
-                />
-              </AuthField>
-              {errors.phone_number && (
-                <span className="text-[13px] mt-1.5 block" style={{ color: "var(--error)" }}>
-                  {errors.phone_number.message}
-                </span>
-              )}
-            </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const numbers = phoneInput.replace(/\D/g, "");
+              if (numbers.length >= 11) onRequestCode(phoneInput);
+            }}
+            className="mt-8 flex flex-col gap-4"
+          >
+            <AuthField icon={<Phone size={18} />}>
+              <input
+                name="phone_number"
+                value={phoneInput}
+                placeholder="+7 (___) ___-__-__"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                onChange={(e) => setPhoneInput(formatPhone(e.target.value))}
+                className="w-full bg-transparent outline-none text-[16px] font-[family-name:var(--font-stetica-regular)]"
+                style={{ color: "var(--text-primary)" }}
+              />
+            </AuthField>
 
             <AuthSubmit disabled={loading || requestingCode}>
               {requestingCode || loading ? "Отправка..." : "Получить код"}
             </AuthSubmit>
           </form>
-
-          <p
-            className="mt-6 text-center text-[14px] font-[family-name:var(--font-stetica-regular)]"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Уже есть аккаунт?{" "}
-            <Link href="/login" style={{ color: "var(--text-primary)", fontWeight: 700 }}>
-              Войти
-            </Link>
-          </p>
         </>
       ) : (
         <>
@@ -236,7 +209,7 @@ function RegisterContent() {
             <OtpInput
               value={otp}
               onChange={handleOtpChange}
-              onComplete={onConfirmRegister}
+              onComplete={onConfirm}
               disabled={loading}
               error={!!error && error.includes("код")}
             />
@@ -265,11 +238,11 @@ function RegisterContent() {
           </div>
 
           <AuthSubmit
-            onClick={onConfirmRegister}
+            onClick={onConfirm}
             disabled={loading || otp.length !== 6}
             className="mt-4"
           >
-            {loading ? "Регистрация..." : "Зарегистрироваться"}
+            {loading ? "Вход..." : "Войти"}
           </AuthSubmit>
         </>
       )}

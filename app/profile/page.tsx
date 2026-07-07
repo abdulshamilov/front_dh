@@ -37,23 +37,11 @@ function GuestPrompt() {
     <AuthShell onBack={() => router.push("/")}>
       <AuthTitle line1="Войдите" line2="в профиль" />
       <AuthSubtitle>
-        Чтобы видеть избранное, историю просмотров и бонусы — войдите или создайте аккаунт
+        Чтобы видеть избранное, историю просмотров и бонусы — войдите по номеру телефона
       </AuthSubtitle>
 
       <div className="mt-8 flex flex-col gap-3">
-        <AuthSubmit onClick={() => router.push("/login")}>Войти</AuthSubmit>
-        <button
-          type="button"
-          onClick={() => router.push("/register")}
-          className="w-full h-14 rounded-full text-[16px] font-bold active:scale-[0.99] transition"
-          style={{
-            background: "transparent",
-            color: "var(--text-primary)",
-            border: "1px solid var(--border-color)",
-          }}
-        >
-          Зарегистрироваться
-        </button>
+        <AuthSubmit onClick={() => router.push("/register")}>Войти</AuthSubmit>
       </div>
     </AuthShell>
   );

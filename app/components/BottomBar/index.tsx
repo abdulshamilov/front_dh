@@ -10,9 +10,10 @@ import { useRequireAuth } from "@/app/shared/hooks/useRequireAuth";
 
 const HIDDEN_PATHS = ["/login", "/register", "/forgot", "/chat", "/map", "/card/"];
 
-// Цвета иконок НЕ меняем — как было: активная #0055FF, неактивная #8E8F91.
-const ACTIVE = "#0055FF";
-const INACTIVE = "#8E8F91";
+// Instagram-стиль: все иконки белые; активная — залитая (filled) в сером
+// круге-«шайбе», неактивная — контурная.
+const ACTIVE = "#FFFFFF";
+const INACTIVE = "#FFFFFF";
 
 /**
  * Запускает мягкую pop-анимацию тапа на pointerdown и всегда проигрывает её
@@ -68,11 +69,13 @@ function TabItem({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 48,
-        height: 48,
-        borderRadius: 16,
-        background: active ? "var(--home-accent-soft)" : "transparent",
-        transition: "background 180ms ease",
+        // Активный таб — широкая светло-серая овальная «шайба» почти во всю
+        // высоту бара, как в Instagram; ширина плавно расползается.
+        width: active ? 76 : 48,
+        height: 52,
+        borderRadius: 9999,
+        background: active ? "rgba(255,255,255,0.22)" : "transparent",
+        transition: "background 200ms ease, width 260ms cubic-bezier(0.22,1,0.36,1)",
       }}
     >
       {children}
@@ -83,7 +86,6 @@ function TabItem({
 export function BottomBar() {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
-  const mapPop = useTapPop<HTMLAnchorElement>();
 
   const favoritesCount = useAppSelector((state) => state.cards.favoritesCount);
   const isAuth = useAppSelector((state) => state.auth.isAuth);
@@ -135,40 +137,48 @@ export function BottomBar() {
     return pathname.startsWith(path);
   };
 
-  const badgeLabel = favoritesCount > 9 ? "9+" : String(favoritesCount);
-
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 flex justify-center lg:hidden"
       aria-label="Bottom navigation"
       style={{
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        padding: "0 16px calc(env(safe-area-inset-bottom, 0px) + 12px)",
         pointerEvents: collapsed ? "none" : "auto",
       }}
     >
-      {/* Плавающая «пилюля» со скруглёнными углами */}
+      {/* Внешний слой — только анимация скрытия (transform/opacity/filter).
+          Держим её отдельно от пилюли: filter/transform на том же элементе,
+          что и backdrop-filter, ломают эффект стекла в Chrome/Safari. */}
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          padding: 8,
-          borderRadius: 26,
-          background: "rgba(13,14,16,0.88)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          boxShadow: "0 14px 40px rgba(0,0,0,0.55)",
+          width: "100%",
+          maxWidth: 480,
           transformOrigin: "bottom center",
           transform: collapsed
             ? "translateY(130%) scale(0.9)"
             : "translateY(0) scale(1)",
           opacity: collapsed ? 0 : 1,
-          filter: collapsed ? "blur(2px)" : "blur(0px)",
           // Вниз — плавно (без пружины), вверх — с лёгким iOS-overshoot.
           transition: collapsed
-            ? "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease, filter 0.5s ease"
-            : "transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.34s ease, filter 0.34s ease",
+            ? "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease"
+            : "transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.34s ease",
+        }}
+      >
+      {/* Пилюля: раскладка как в Instagram, материал — полупрозрачное
+          стекло: контент просвечивает и размывается под баром. */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          height: 64,
+          padding: "0 6px",
+          borderRadius: 9999,
+          background: "rgba(30,30,34,0.65)",
+          backdropFilter: "blur(24px) saturate(160%)",
+          WebkitBackdropFilter: "blur(24px) saturate(160%)",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
         }}
       >
         {/* Home */}
@@ -190,33 +200,26 @@ export function BottomBar() {
           <Bot size={24} strokeWidth={2} color={isActive("/chat") ? ACTIVE : INACTIVE} />
         </TabItem>
 
-        {/* Map — акцентная кнопка (по центру) */}
-        <Link
-          ref={mapPop.ref}
-          href="/map"
-          aria-label="Карта объектов"
-          className="tab-item"
-          onPointerDown={mapPop.onPointerDown}
-          onAnimationEnd={mapPop.onAnimationEnd}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 52,
-            height: 52,
-            borderRadius: 18,
-            background: "var(--home-accent)",
-            boxShadow: "0 6px 18px rgba(0,117,255,0.45)",
-          }}
-        >
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        {/* Map — обычный пункт, как остальные (в Instagram нет акцентной кнопки) */}
+        <TabItem href="/map" label="Карта объектов" active={isActive("/map")}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
               d="M12 2C7.58 2 4 5.58 4 10c0 7 8 12 8 12s8-5 8-12c0-4.42-3.58-8-8-8z"
-              fill="#FFFFFF"
+              fill={isActive("/map") ? ACTIVE : "none"}
+              stroke={INACTIVE}
+              strokeWidth="1.8"
+              strokeLinejoin="round"
             />
-            <circle cx="12" cy="10" r="3" fill="var(--home-accent)" />
+            <circle
+              cx="12"
+              cy="10"
+              r="3"
+              fill={isActive("/map") ? "rgba(22,22,24,1)" : "none"}
+              stroke={isActive("/map") ? "none" : INACTIVE}
+              strokeWidth="1.8"
+            />
           </svg>
-        </Link>
+        </TabItem>
 
         {/* Favorites */}
         <TabItem
@@ -237,27 +240,16 @@ export function BottomBar() {
             <span
               aria-hidden="true"
               style={{
+                // Точка-индикатор без числа, снизу-справа от иконки — как в Instagram.
                 position: "absolute",
-                top: "6px",
-                right: "6px",
-                minWidth: "18px",
-                height: "18px",
-                padding: favoritesCount >= 10 ? "0 4px" : "0",
+                bottom: "12px",
+                right: "8px",
+                width: "9px",
+                height: "9px",
                 borderRadius: "9999px",
-                backgroundColor: "#F1117E",
-                color: "white",
-                fontSize: "10px",
-                fontWeight: 600,
-                lineHeight: "18px",
-                textAlign: "center",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxSizing: "border-box",
+                backgroundColor: "#FF3040",
               }}
-            >
-              {badgeLabel}
-            </span>
+            />
           )}
         </TabItem>
 
@@ -279,6 +271,7 @@ export function BottomBar() {
             />
           </svg>
         </TabItem>
+      </div>
       </div>
     </nav>
   );

@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import PublicRoute from "@/app/components/PublicRoute";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -141,15 +140,6 @@ function LoginContent() {
             </AuthSubmit>
           </form>
 
-          <p
-            className="mt-6 text-center text-[14px] font-[family-name:var(--font-stetica-regular)]"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Нет аккаунта?{" "}
-            <Link href="/register" style={{ color: "var(--text-primary)", fontWeight: 700 }}>
-              Зарегистрироваться
-            </Link>
-          </p>
         </>
       ) : (
         <>

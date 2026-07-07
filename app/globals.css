@@ -23,6 +23,25 @@ input[type="color"] {
   list-style-type: none;
 }
 
+/* Автозаполнение браузера красит инпуты белым/голубым — на тёмных формах
+ * это выглядит как белые полоски. Перекрашиваем заливку под тёмное поле
+ * и оставляем светлый текст. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--input-dark) inset;
+  box-shadow: 0 0 0 1000px var(--input-dark) inset;
+  -webkit-text-fill-color: var(--text-primary);
+  caret-color: var(--text-primary);
+  border-radius: inherit;
+  transition: background-color 9999s ease-in-out 0s;
+}
+input:autofill {
+  box-shadow: 0 0 0 1000px var(--input-dark) inset;
+  -webkit-text-fill-color: var(--text-primary);
+}
+
 /* ===== DreamHouse Design System — Dark-first =====
  * .force-dark — обёртка для экранов без светлой темы (карточка объекта):
  * переобъявляет тёмные токены внутри поддерева, перебивая
