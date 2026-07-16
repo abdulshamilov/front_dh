@@ -24,6 +24,14 @@ export function OtpInput({
   const [otp, setOtp] = useState<string[]>(new Array(length).fill(""));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // Достаёт код из произвольного текста («Kod Dream House: 479153. Deistvitelen 5 minut.»):
+  // сначала ищем группу ровно из `length` цифр подряд, иначе берём первые цифры.
+  const extractCode = (text: string): string => {
+    const exact = text.match(new RegExp(`\\d{${length}}`));
+    if (exact) return exact[0];
+    return text.replace(/\D/g, "").slice(0, length);
+  };
+
   useEffect(() => {
     // Синхронизируем внутреннее состояние с внешним value
     if (value) {
@@ -50,7 +58,7 @@ export function OtpInput({
       .get({ otp: { transport: ["sms"] }, signal: ac.signal } as any)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((cred: any) => {
-        const code = String(cred?.code ?? "").replace(/\D/g, "").slice(0, length);
+        const code = extractCode(String(cred?.code ?? ""));
         if (!code) return;
         const newOtp = new Array(length).fill("");
         code.split("").forEach((c, i) => {
@@ -92,10 +100,10 @@ export function OtpInput({
       return;
     }
 
-    // Автозаполнение из SMS (iOS/Android) кидает весь код в одно поле —
-    // распределяем его по ячейкам, а не берём один символ.
+    // Автозаполнение из SMS (iOS/Android) кидает весь текст сообщения в одно
+    // поле — вытаскиваем из него код и распределяем по ячейкам.
     if (digits.length > 1) {
-      fillFrom(digits.slice(0, length), index);
+      fillFrom(extractCode(raw), index);
       return;
     }
 
@@ -132,9 +140,8 @@ export function OtpInput({
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").slice(0, length);
-    const pastedArray = pastedData.split("").filter((char) => !isNaN(Number(char)));
-    
+    const pastedArray = extractCode(e.clipboardData.getData("text")).split("");
+
     if (pastedArray.length > 0) {
       const newOtp = [...otp];
       pastedArray.forEach((char, index) => {
@@ -169,7 +176,7 @@ export function OtpInput({
           inputMode="numeric"
           autoComplete={index === 0 ? "one-time-code" : "off"}
           name={index === 0 ? "one-time-code" : undefined}
-          maxLength={index === 0 ? length : 1}
+          maxLength={index === 0 ? undefined : 1}
           value={digit}
           onChange={(e) => handleChange(e.target, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
