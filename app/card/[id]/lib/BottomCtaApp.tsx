@@ -50,31 +50,8 @@ export function BottomCtaApp({ onRequestClick, onBeforeAction }: BottomCtaAppPro
   const [dragging, setDragging] = useState(false);
   const [confirmed, setConfirmed] = useState<null | "call" | "request">(null);
   const [hidden, setHidden] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
 
   const center = maxX / 2;
-
-  // Прячется/появляется при скролле как навбар.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    let lastY = window.scrollY;
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        ticking = false;
-        const y = window.scrollY;
-        const d = y - lastY;
-        if (y < 24) setCollapsed(false);
-        else if (d > 6) setCollapsed(true);
-        else if (d < -6) setCollapsed(false);
-        lastY = y;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   useEffect(() => {
     const measure = () => {
@@ -139,21 +116,8 @@ export function BottomCtaApp({ onRequestClick, onBeforeAction }: BottomCtaAppPro
 
   return (
     <div className="bottom-cta-app">
-      <div
-        className="cta-inner"
-        style={{
-          transformOrigin: "bottom center",
-          transform: collapsed
-            ? "translateY(130%) scale(0.9)"
-            : "translateY(0) scale(1)",
-          opacity: collapsed ? 0 : 1,
-          filter: collapsed ? "blur(2px)" : "blur(0px)",
-          pointerEvents: collapsed ? "none" : "auto",
-          // iOS-подобная пружина: лёгкий overshoot при появлении.
-          transition:
-            "transform 0.52s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.34s ease, filter 0.34s ease",
-        }}
-      >
+      {/* Закреплена: не прячется при скролле — всегда доступна. */}
+      <div className="cta-inner">
         <div ref={trackRef} className="swipe-track">
           {confirmed ? (
             <span className="swipe-done">Готово</span>

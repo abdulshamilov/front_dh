@@ -67,14 +67,16 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         }}
       />
 
-      {/* Sheet body */}
+      {/* Sheet body — max-height через dvh (см. <style> ниже): в iOS Safari
+          vh считается по развёрнутому viewport'у без учёта нижнего тулбара,
+          из-за чего sticky-футер с кнопкой уезжал за край экрана. */}
       <div
+        className="dh-sheet-body"
         style={{
           position: "relative",
           marginTop: "auto",
           width: "100%",
           maxWidth: 540,
-          maxHeight: "90vh",
           background: "var(--bg-primary)",
           border: "1px solid var(--border-color)",
           borderTopLeftRadius: 24,
@@ -164,6 +166,15 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         )}
 
         <style>{`
+          .dh-sheet-body {
+            max-height: 90vh;
+          }
+          /* dvh = видимый viewport с учётом тулбаров Safari */
+          @supports (height: 100dvh) {
+            .dh-sheet-body {
+              max-height: calc(100dvh - 32px);
+            }
+          }
           @keyframes sheet-up {
             from { transform: translateY(100%); }
             to { transform: translateY(0); }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Home, RefreshCw, Search as SearchIcon } from "lucide-react";
+import { ArrowLeft, Home, RefreshCw, Search as SearchIcon } from "lucide-react";
 import { formatPrice } from "@/app/card/[id]/lib";
 import { AsidePanel } from "@/app/card/[id]/lib/AsidePanel";
 import type { ICard } from "@/app/types/models";
@@ -237,6 +237,35 @@ function CardDetailV2Loaded({
       className="force-dark flex flex-col items-center font-[family-name:var(--font-stetica-medium)]"
       style={{ backgroundColor: "var(--bg-primary)", minHeight: "100dvh" }}
     >
+      {/* ── MOBILE: закреплённая кнопка «Назад» — всегда видна поверх
+          слайдера и контента при скролле, работает и в режиме 3D ── */}
+      <button
+        type="button"
+        onClick={onBack}
+        aria-label="Назад"
+        className="lg:hidden press-scale"
+        style={{
+          position: "fixed",
+          top: "calc(12px + env(safe-area-inset-top, 0px))",
+          left: 16,
+          zIndex: 50,
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          background: "rgba(7, 7, 7, 0.5)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+        }}
+      >
+        <ArrowLeft size={20} color="#FFFFFF" />
+      </button>
+
       {/* ── MOBILE: узкая колонка 480px — без изменений ── */}
       <div className="lg:hidden w-full max-w-[480px] relative">
         {media === "3d" && has3d ? (
@@ -256,6 +285,7 @@ function CardDetailV2Loaded({
             onToggleFav={actions.toggleFav}
             onShare={actions.share}
             onBack={onBack}
+            showBack={false}
           />
         )}
         {mediaSwitch && (

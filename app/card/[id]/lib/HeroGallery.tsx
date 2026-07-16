@@ -21,6 +21,8 @@ interface HeroGalleryProps {
   onShare: () => void;
   onBack: () => void;
   aspectRatio?: string;
+  /** Скрыть собственную кнопку «Назад» (когда страница рисует свою, закреплённую). */
+  showBack?: boolean;
 }
 
 /** Translucent 40x40 control button, lucide icon 20px inside. */
@@ -67,6 +69,7 @@ export function HeroGallery({
   onShare,
   onBack,
   aspectRatio = "4 / 5",
+  showBack = true,
 }: HeroGalleryProps) {
   const images = useMemo(
     () =>
@@ -261,9 +264,13 @@ export function HeroGallery({
           paddingTop: "calc(12px + env(safe-area-inset-top, 0px))",
         }}
       >
-        <HeroControlButton onClick={onBack} ariaLabel="Назад">
-          <ArrowLeft size={20} color="#FFFFFF" />
-        </HeroControlButton>
+        {showBack ? (
+          <HeroControlButton onClick={onBack} ariaLabel="Назад">
+            <ArrowLeft size={20} color="#FFFFFF" />
+          </HeroControlButton>
+        ) : (
+          <span />
+        )}
 
         <div style={{ display: "flex", gap: "8px" }}>
           <HeroControlButton onClick={onShare} ariaLabel="Поделиться">

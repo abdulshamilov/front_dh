@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Phone } from "lucide-react";
+import { Phone, Heart, Bot, History, Gift, Bell } from "lucide-react";
 import { useAppDispatch } from "@/app/shared/redux/hooks";
 import { setUser, fetchUser } from "@/app/shared/redux/slices/auth";
 import PublicRoute from "@/app/components/PublicRoute";
@@ -29,6 +29,86 @@ import {
  * зарегистрирован — прозрачно переключаемся на обычный вход по SMS.
  */
 const DEFAULT_NAME = "безымянный";
+
+/**
+ * Контекст входа: для каждой страницы-источника (?next=) — свой заголовок,
+ * объяснение и свой список пользы, чтобы гость явно видел, что именно
+ * даст ему вход для конкретного действия.
+ */
+interface AuthContext {
+  title: [string, string];
+  subtitle: string;
+  benefits: { icon: React.ReactNode; text: string }[];
+}
+
+const DEFAULT_CONTEXT: AuthContext = {
+  title: ["Вход", "по номеру"],
+  subtitle: "Укажите номер телефона — вышлем код для входа",
+  benefits: [
+    { icon: <Heart size={16} />, text: "Избранное синхронизируется между устройствами" },
+    { icon: <Bot size={16} />, text: "ИИ-помощник подбирает квартиры под ваши запросы" },
+    { icon: <Bell size={16} />, text: "Уведомления о новых объектах и снижении цен" },
+    { icon: <History size={16} />, text: "История просмотров и статусы ваших заявок" },
+    { icon: <Gift size={16} />, text: "Бонусы за приглашённых друзей" },
+  ],
+};
+
+function contextForNext(next: string | null): AuthContext {
+  if (!next) return DEFAULT_CONTEXT;
+
+  if (next.startsWith("/favorite")) {
+    return {
+      title: ["Сохраните", "избранное"],
+      subtitle:
+        "Понравившиеся квартиры привязываются к аккаунту — войдите, чтобы подборка не потерялась",
+      benefits: [
+        { icon: <Heart size={16} />, text: "Подборка доступна с телефона и компьютера" },
+        { icon: <Bell size={16} />, text: "Сообщим, если цена на сохранённую квартиру снизится" },
+        { icon: <History size={16} />, text: "Избранное не пропадёт при смене устройства" },
+      ],
+    };
+  }
+
+  if (next.startsWith("/chat")) {
+    return {
+      title: ["ИИ-подбор", "квартиры"],
+      subtitle:
+        "Помощник запоминает ваши предпочтения и историю диалога — для этого нужен аккаунт",
+      benefits: [
+        { icon: <Bot size={16} />, text: "Подбор под ваш бюджет, район и параметры" },
+        { icon: <History size={16} />, text: "Диалог сохраняется — можно вернуться к подбору позже" },
+        { icon: <Bell size={16} />, text: "Помощник предложит новые объекты по вашему запросу" },
+      ],
+    };
+  }
+
+  if (next.startsWith("/card")) {
+    return {
+      title: ["Заявка", "за минуту"],
+      subtitle:
+        "Войдите — и менеджер свяжется с вами по этой квартире, без повторного ввода данных",
+      benefits: [
+        { icon: <Phone size={16} />, text: "Заявки и звонки в один тап — номер уже в профиле" },
+        { icon: <History size={16} />, text: "Статусы заявок сохраняются в личном кабинете" },
+        { icon: <Heart size={16} />, text: "Квартира не потеряется — добавьте её в избранное" },
+      ],
+    };
+  }
+
+  if (next.startsWith("/profile")) {
+    return {
+      title: ["Ваш", "профиль"],
+      subtitle: "Войдите, чтобы открыть личный кабинет",
+      benefits: [
+        { icon: <Heart size={16} />, text: "Избранные квартиры в одном месте" },
+        { icon: <History size={16} />, text: "История просмотров и ваши заявки" },
+        { icon: <Gift size={16} />, text: "Бонусы за приглашённых друзей" },
+      ],
+    };
+  }
+
+  return DEFAULT_CONTEXT;
+}
 
 function RegisterContent() {
   const dispatch = useAppDispatch();
@@ -160,12 +240,14 @@ function RegisterContent() {
 
   const onBack = () => (step === "otp" ? handleBackToPhone() : router.push("/"));
 
+  const ctx = contextForNext(searchParams.get("next"));
+
   return (
     <AuthShell onBack={onBack}>
       {step === "phone" ? (
         <>
-          <AuthTitle line1="Вход" line2="по номеру" />
-          <AuthSubtitle>Укажите номер телефона — вышлем код для входа</AuthSubtitle>
+          <AuthTitle line1={ctx.title[0]} line2={ctx.title[1]} />
+          <AuthSubtitle>{ctx.subtitle}</AuthSubtitle>
 
           {error && <AuthError>{error}</AuthError>}
 
@@ -195,6 +277,32 @@ function RegisterContent() {
               {requestingCode || loading ? "Отправка..." : "Получить код"}
             </AuthSubmit>
           </form>
+
+          {/* Зачем нужен аккаунт */}
+          <div className="mt-8 flex flex-col gap-3">
+            {ctx.benefits.map((b) => (
+              <div key={b.text} className="flex items-center gap-3">
+                <span
+                  className="flex items-center justify-center flex-shrink-0"
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: "rgba(0,117,255,0.12)",
+                    color: "var(--accent-primary)",
+                  }}
+                >
+                  {b.icon}
+                </span>
+                <span
+                  className="text-[13px] leading-snug font-[family-name:var(--font-stetica-regular)]"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {b.text}
+                </span>
+              </div>
+            ))}
+          </div>
         </>
       ) : (
         <>

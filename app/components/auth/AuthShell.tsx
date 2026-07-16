@@ -35,7 +35,7 @@ export function AuthShell({
           style={{ color: "var(--text-primary)" }}
         >
           <ChevronLeft size={22} strokeWidth={2.4} />
-          <span className="text-[16px] font-[family-name:var(--font-stetica-regular)]">Back</span>
+          <span className="text-[16px] font-[family-name:var(--font-stetica-regular)]">Назад</span>
         </button>
 
         {children}

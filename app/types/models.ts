@@ -85,20 +85,24 @@ export interface ICashOption {
 export interface IInstallmentOption {
   id: number;
   apartment_type: string;
+  floor_from: number | null;
+  floor_to: number | null;
+  floor_label: string;
   term_months: number;
   price_per_sqm: string;
-  total_price: string;
-  down_payment_type: "percent" | "amount";
-  down_payment_percent: string;
+  total_price: string | number;
+  down_payment_type: "percent" | "fixed";
+  down_payment_percent: string | null;
   down_payment_min_amount: string;
-  down_payment: string;
-  monthly_payment: string;
+  down_payment_max_amount: string | null;
+  down_payment: string | number;
+  monthly_payment: string | number;
   accepts_mat_capital: boolean;
   mat_capital_note: string;
   note: string;
-  extra_conditions: string;
-  valid_from: string;
-  valid_until: string;
+  extra_conditions: Record<string, unknown> | string;
+  valid_from: string | null;
+  valid_until: string | null;
 }
 
 export interface IPromotion {
@@ -116,6 +120,7 @@ export interface ICardPricing {
   accepts_car_barter: boolean;
   accepts_land_barter: boolean;
   cash_option: ICashOption | null;
+  cash_options?: ICashOption[];
   installment_options: IInstallmentOption[];
   promotions: IPromotion[];
 }

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search as SearchIcon, SlidersHorizontal, ArrowRight, Clock, TrendingUp, X } from "lucide-react";
+import { Search as SearchIcon, SlidersHorizontal, ArrowRight, Clock, TrendingUp, X, Mic, MicOff } from "lucide-react";
+import { useVoiceInput } from "@/app/components/AIModal/hooks/useVoiceInput";
 import axios, { API_BASE_URL } from "@/app/shared/config/axios";
 import type { ICard } from "@/app/types/models";
 
@@ -235,6 +236,30 @@ export function HomeHero() {
     runSearch(query);
   };
 
+  // ── Голосовой поиск (Web Speech API, как в поиске шапки) ──
+  const [isVoiceSupported, setIsVoiceSupported] = useState(false);
+  useEffect(() => {
+    setIsVoiceSupported(
+      "webkitSpeechRecognition" in window || "SpeechRecognition" in window
+    );
+  }, []);
+
+  const handleVoiceFinal = useCallback(
+    (text: string) => {
+      if (text.trim()) runSearch(text);
+    },
+    [runSearch]
+  );
+
+  const { isListening, interimText, toggleListening } = useVoiceInput({
+    onFinalText: handleVoiceFinal,
+  });
+
+  // Живая транскрипция: пока идёт запись, показываем распознанный текст в инпуте
+  useEffect(() => {
+    if (isListening && interimText) setQuery(interimText);
+  }, [isListening, interimText]);
+
   const showDropdown = focused;
   const isEmptyQuery = query.trim().length === 0;
 
@@ -256,21 +281,21 @@ export function HomeHero() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 10,
-              height: 56,
-              padding: "0 18px",
+              gap: 9,
+              height: 48,
+              padding: "0 14px",
               background: "var(--home-surface)",
               border: `1px solid ${focused ? "var(--home-accent)" : "var(--home-border-strong)"}`,
-              borderRadius: 20,
+              borderRadius: 17,
               boxShadow: "0 8px 24px rgba(0,0,0,0.22)",
               transition: "border-color 160ms ease",
             }}
           >
-            <SearchIcon size={20} strokeWidth={2} color="var(--home-text-tertiary)" style={{ flexShrink: 0 }} />
+            <SearchIcon size={18} strokeWidth={2} color="var(--home-text-tertiary)" style={{ flexShrink: 0 }} />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Найти квартиру или ЖК"
+              placeholder={isListening ? "Говорите…" : "Найти квартиру или ЖК"}
               aria-label="Поиск по квартирам и ЖК"
               autoComplete="off"
               style={{
@@ -281,11 +306,11 @@ export function HomeHero() {
                 border: "none",
                 outline: "none",
                 fontFamily: "var(--font-inter), system-ui, sans-serif",
-                fontSize: 16,
+                fontSize: 15,
                 color: "var(--home-text-primary)",
               }}
             />
-            {query && (
+            {query && !isListening && (
               <button
                 type="button"
                 aria-label="Очистить"
@@ -299,7 +324,32 @@ export function HomeHero() {
                   flexShrink: 0,
                 }}
               >
-                <X size={18} color="var(--home-text-tertiary)" />
+                <X size={16} color="var(--home-text-tertiary)" />
+              </button>
+            )}
+            {isVoiceSupported && (
+              <button
+                type="button"
+                aria-label={isListening ? "Остановить запись" : "Голосовой поиск"}
+                aria-pressed={isListening}
+                onClick={() => { void toggleListening(); }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 30,
+                  height: 30,
+                  borderRadius: 999,
+                  border: "none",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  color: isListening ? "var(--home-danger)" : "var(--home-text-tertiary)",
+                  background: isListening ? "rgba(255,68,68,0.12)" : "transparent",
+                  animation: isListening ? "heroMicPulse 1.4s ease-in-out infinite" : "none",
+                  transition: "color 160ms ease, background 160ms ease",
+                }}
+              >
+                {isListening ? <MicOff size={17} /> : <Mic size={17} />}
               </button>
             )}
           </div>
@@ -384,17 +434,17 @@ export function HomeHero() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 56,
-            height: 56,
+            width: 48,
+            height: 48,
             flexShrink: 0,
             background: "var(--home-accent)",
             border: "none",
-            borderRadius: 20,
+            borderRadius: 17,
             cursor: "pointer",
             boxShadow: "0 8px 24px rgba(0,117,255,0.35)",
           }}
         >
-          <SlidersHorizontal size={22} strokeWidth={2.2} color="#FFFFFF" />
+          <SlidersHorizontal size={20} strokeWidth={2.2} color="#FFFFFF" />
         </button>
       </form>
 
@@ -407,6 +457,10 @@ export function HomeHero() {
         }
         .home-suggest-row:hover {
           background: var(--home-surface-elevated) !important;
+        }
+        @keyframes heroMicPulse {
+          0%, 100% { box-shadow: 0 0 0 4px rgba(255, 68, 68, 0.25); }
+          50% { box-shadow: 0 0 0 9px rgba(255, 68, 68, 0.1); }
         }
       `}</style>
     </section>

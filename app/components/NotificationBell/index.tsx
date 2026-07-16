@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { X, Bell, ChevronRight } from "lucide-react";
+import { X, Bell, ChevronRight, CheckCheck, Trash2 } from "lucide-react";
 import {
   useGetNotificationsQuery,
   useMarkNotificationAsReadMutation,
   useMarkAllNotificationsAsReadMutation,
+  useDeleteNotificationMutation,
+  useClearNotificationsMutation,
 } from "@/app/shared/redux/api/notifications";
 
 interface NotificationBellProps {
@@ -66,7 +68,9 @@ export function NotificationBell({ onClose }: NotificationBellProps) {
   const router = useRouter();
   const { data: notificationsData, isLoading } = useGetNotificationsQuery();
   const [markAsRead] = useMarkNotificationAsReadMutation();
-  const [markAllAsRead] = useMarkAllNotificationsAsReadMutation();
+  const [markAllAsRead, { isLoading: isMarkingAll }] = useMarkAllNotificationsAsReadMutation();
+  const [deleteNotification] = useDeleteNotificationMutation();
+  const [clearNotifications, { isLoading: isClearing }] = useClearNotificationsMutation();
 
   const notifications: Notification[] = useMemo(() => {
     const result: Notification[] = [];
@@ -87,12 +91,6 @@ export function NotificationBell({ onClose }: NotificationBellProps) {
     () => notifications.filter((n) => !n.is_read).length,
     [notifications]
   );
-
-  useEffect(() => {
-    if (!isLoading && notificationsData && unreadCount > 0) {
-      markAllAsRead().catch(() => {});
-    }
-  }, [isLoading, notificationsData, unreadCount, markAllAsRead]);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -147,12 +145,26 @@ export function NotificationBell({ onClose }: NotificationBellProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
-          <h3
-            className="text-[18px] font-[family-name:var(--font-stetica-bold)]"
-            style={{ color: "var(--text-primary)" }}
-          >
-            Уведомления
-          </h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            <h3
+              className="text-[18px] font-[family-name:var(--font-stetica-bold)]"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Уведомления
+            </h3>
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  minWidth: 20, height: 20, padding: "0 6px", borderRadius: 999,
+                  background: "var(--accent-primary)", color: "#fff",
+                  fontSize: 11.5, fontWeight: 700, lineHeight: "20px", textAlign: "center",
+                  fontFamily: "var(--font-inter), system-ui",
+                }}
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             aria-label="Закрыть"
@@ -173,6 +185,45 @@ export function NotificationBell({ onClose }: NotificationBellProps) {
             <X size={17} />
           </button>
         </div>
+
+        {/* Действия: пометить всё прочитанным / очистить список */}
+        {notifications.length > 0 && (
+          <div style={{ display: "flex", gap: 8, padding: "0 20px 10px" }}>
+            <button
+              type="button"
+              onClick={() => markAllAsRead().catch(() => {})}
+              disabled={unreadCount === 0 || isMarkingAll}
+              className="notif-action"
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 12px", borderRadius: 999, border: "none", cursor: "pointer",
+                background: "var(--bg-button)",
+                color: unreadCount === 0 ? "var(--text-disabled)" : "var(--accent-primary)",
+                fontSize: 12.5, fontWeight: 600, fontFamily: "var(--font-inter), system-ui",
+                opacity: isMarkingAll ? 0.6 : 1,
+              }}
+            >
+              <CheckCheck size={14} />
+              Прочитать все
+            </button>
+            <button
+              type="button"
+              onClick={() => clearNotifications().catch(() => {})}
+              disabled={isClearing}
+              className="notif-action"
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 12px", borderRadius: 999, border: "none", cursor: "pointer",
+                background: "var(--bg-button)", color: "var(--text-secondary)",
+                fontSize: 12.5, fontWeight: 600, fontFamily: "var(--font-inter), system-ui",
+                opacity: isClearing ? 0.6 : 1,
+              }}
+            >
+              <Trash2 size={13} />
+              {isClearing ? "Очистка…" : "Очистить"}
+            </button>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-2 pb-3">
           {isLoading ? (
@@ -225,7 +276,7 @@ export function NotificationBell({ onClose }: NotificationBellProps) {
                     textAlign: "left",
                     padding: "12px 12px",
                     borderRadius: 14,
-                    background: "transparent",
+                    background: n.is_read ? "transparent" : "rgba(0,117,255,0.07)",
                     border: "none",
                     borderTop: i === 0 ? "none" : "1px solid var(--border-color)",
                     cursor: clickable ? "pointer" : "default",
@@ -300,20 +351,49 @@ export function NotificationBell({ onClose }: NotificationBellProps) {
                     </span>
                   </span>
 
-                  {/* Индикатор непрочитанного / переход */}
-                  {clickable ? (
-                    <ChevronRight size={16} color="var(--text-tertiary)" style={{ flexShrink: 0 }} />
-                  ) : !n.is_read ? (
+                  {/* Индикатор непрочитанного / переход / удаление */}
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                    {!n.is_read && (
+                      <span
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: "var(--accent-primary)",
+                        }}
+                      />
+                    )}
+                    {clickable && (
+                      <ChevronRight size={16} color="var(--text-tertiary)" />
+                    )}
                     <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: "var(--accent-primary)",
-                        flexShrink: 0,
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Удалить уведомление"
+                      className="notif-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification(n.id).catch(() => {});
                       }}
-                    />
-                  ) : null}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.stopPropagation();
+                          deleteNotification(n.id).catch(() => {});
+                        }
+                      }}
+                      style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
+                      <X size={14} />
+                    </span>
+                  </span>
                 </button>
               );
             })
@@ -347,6 +427,19 @@ export function NotificationBell({ onClose }: NotificationBellProps) {
         }
         .notif-close:active {
           transform: scale(0.92);
+        }
+        .notif-action:active {
+          transform: scale(0.96);
+        }
+        .notif-delete {
+          transition: background 0.15s ease, color 0.15s ease;
+        }
+        .notif-delete:hover {
+          background: var(--bg-button);
+          color: var(--error);
+        }
+        .notif-delete:active {
+          transform: scale(0.9);
         }
       `}</style>
     </div>

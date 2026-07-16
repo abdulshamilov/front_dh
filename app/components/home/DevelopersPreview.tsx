@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Building2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAppSelector } from "@/app/shared/redux/hooks";
 
@@ -78,7 +79,7 @@ export function DevelopersPreview() {
                 style={{
                   flex: "0 0 auto",
                   display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 16px",
+                  padding: "10px 14px 10px 10px",
                   borderRadius: 14,
                   background: "var(--home-surface)",
                   border: "1px solid rgba(255,255,255,0.07)",
@@ -97,6 +98,24 @@ export function DevelopersPreview() {
                   el.style.background = "var(--home-surface)";
                 }}
               >
+                {/* Logo on white */}
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                  background: "#FFFFFF",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  overflow: "hidden", padding: 4,
+                }}>
+                  {dev.logo ? (
+                    <Image
+                      src={dev.logo} alt={dev.name}
+                      width={32} height={32}
+                      style={{ objectFit: "contain", width: "100%", height: "100%" }}
+                    />
+                  ) : (
+                    <Building2 size={18} color="#888" strokeWidth={1.8} />
+                  )}
+                </div>
+
                 {/* Name + count */}
                 <div style={{ minWidth: 0 }}>
                   <div style={{
