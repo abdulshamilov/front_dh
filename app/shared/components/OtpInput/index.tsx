@@ -103,7 +103,9 @@ export function OtpInput({
     // Автозаполнение из SMS (iOS/Android) кидает весь текст сообщения в одно
     // поле — вытаскиваем из него код и распределяем по ячейкам.
     if (digits.length > 1) {
-      fillFrom(extractCode(raw), index);
+      const code = extractCode(raw);
+      // Полный код раскладываем всегда с первой ячейки, куда бы его ни вставили.
+      fillFrom(code, code.length === length ? 0 : index);
       return;
     }
 
@@ -174,9 +176,8 @@ export function OtpInput({
           }}
           type="text"
           inputMode="numeric"
-          autoComplete={index === 0 ? "one-time-code" : "off"}
+          autoComplete="one-time-code"
           name={index === 0 ? "one-time-code" : undefined}
-          maxLength={index === 0 ? undefined : 1}
           value={digit}
           onChange={(e) => handleChange(e.target, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
