@@ -149,32 +149,6 @@ export function OtpInput({
     }
   };
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const pastedArray = extractCode(e.clipboardData.getData("text")).split("");
-
-    if (pastedArray.length > 0) {
-      const newOtp = [...otp];
-      pastedArray.forEach((char, index) => {
-        if (index < length) {
-          newOtp[index] = char;
-        }
-      });
-      setOtp(newOtp);
-      
-      const otpValue = newOtp.join("");
-      onChange(otpValue);
-      
-      // Фокус на последнее заполненное поле или следующее пустое
-      const nextIndex = Math.min(pastedArray.length, length - 1);
-      inputRefs.current[nextIndex]?.focus();
-      
-      if (otpValue.length === length) {
-        onComplete?.(otpValue);
-      }
-    }
-  };
-
   return (
     <div className={`flex gap-2 justify-center ${className}`}>
       {otp.map((digit, index) => (
@@ -190,7 +164,6 @@ export function OtpInput({
           value={digit}
           onChange={(e) => handleChange(e.target, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
-          onPaste={handlePaste}
           onFocus={(e) => {
             e.currentTarget.style.borderColor = error
               ? "var(--error)"
