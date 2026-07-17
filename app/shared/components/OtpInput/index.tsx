@@ -40,14 +40,25 @@ export function OtpInput({
 
   const digits = value.replace(/\D/g, "").slice(0, length);
 
-  const applyValue = (raw: string) => {
-    // Обычный набор цифр — берём как есть; вставленный текст с мусором —
-    // вытаскиваем из него код.
+  // Поле неуправляемое: Android-клавиатуры (Gboard и др.) вставляют текст
+  // через commitText, и управляемый React-инпут может откатить вставку при
+  // ререндере. Значение читаем из DOM и нормализуем руками.
+  const handleInput = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    const raw = el.value;
     const cleaned = /\D/.test(raw) ? extractCode(raw) : raw.slice(0, length);
+    if (el.value !== cleaned) el.value = cleaned;
     if (cleaned === digits) return;
     onChange(cleaned);
     if (cleaned.length === length) onComplete?.(cleaned);
   };
+
+  // Синхронизация DOM с внешним значением (например, сброс кода при ошибке).
+  useEffect(() => {
+    const el = inputRef.current;
+    if (el && el.value !== digits) el.value = digits;
+  }, [digits]);
 
   // Автофокус — клавиатура и подсказка кода из SMS появляются без тапа по полю.
   useEffect(() => {
@@ -90,8 +101,8 @@ export function OtpInput({
         inputMode="numeric"
         autoComplete="one-time-code"
         name="one-time-code"
-        value={digits}
-        onChange={(e) => applyValue(e.target.value)}
+        defaultValue={digits}
+        onInput={handleInput}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         disabled={disabled}
@@ -101,7 +112,9 @@ export function OtpInput({
           inset: 0,
           width: "100%",
           height: "100%",
-          opacity: 0,
+          color: "transparent",
+          textShadow: "none",
+          WebkitTextFillColor: "transparent",
           border: "none",
           outline: "none",
           background: "transparent",
