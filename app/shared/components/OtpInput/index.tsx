@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, KeyboardEvent } from "react";
+import { useRef, useEffect, useState } from "react";
 
 interface OtpInputProps {
   length?: number;
@@ -12,6 +12,12 @@ interface OtpInputProps {
   className?: string;
 }
 
+/**
+ * OTP-инпут на одном настоящем поле: ячейки — только визуализация, а весь
+ * ввод (набор, вставка из буфера, автозаполнение кода из SMS, WebOTP) идёт
+ * в одно невидимое поле поверх них. Это убирает все платформенные проблемы
+ * с распределением вставки по нескольким input'ам.
+ */
 export function OtpInput({
   length = 6,
   value,
@@ -21,40 +27,31 @@ export function OtpInput({
   error = false,
   className = "",
 }: OtpInputProps) {
-  const [otp, setOtp] = useState<string[]>(new Array(length).fill(""));
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
 
-  // Достаёт код из произвольного текста («Kod Dream House: 479153. Deistvitelen 5 minut.»):
-  // сначала ищем группу ровно из `length` цифр подряд, иначе берём первые цифры.
+  // Достаёт код из произвольного текста («Kod Dream House: 479153. Deistvitelen
+  // 5 minut.»): сначала ищем группу ровно из `length` цифр подряд, иначе первые цифры.
   const extractCode = (text: string): string => {
     const exact = text.match(new RegExp(`\\d{${length}}`));
     if (exact) return exact[0];
     return text.replace(/\D/g, "").slice(0, length);
   };
 
-  useEffect(() => {
-    // Синхронизируем внутреннее состояние с внешним value
-    if (value) {
-      const otpArray = value.split("").slice(0, length);
-      const newOtp = new Array(length).fill("");
-      otpArray.forEach((char, index) => {
-        if (index < length) {
-          newOtp[index] = char;
-        }
-      });
-      setOtp(newOtp);
-    } else {
-      setOtp(new Array(length).fill(""));
-    }
-  }, [value, length]);
+  const digits = value.replace(/\D/g, "").slice(0, length);
 
-  // Автофокус на первую пустую ячейку — чтобы клавиатура и подсказка кода
-  // из SMS появлялись сразу, без тапа по полю.
+  const applyValue = (raw: string) => {
+    // Обычный набор цифр — берём как есть; вставленный текст с мусором —
+    // вытаскиваем из него код.
+    const cleaned = /\D/.test(raw) ? extractCode(raw) : raw.slice(0, length);
+    if (cleaned === digits) return;
+    onChange(cleaned);
+    if (cleaned.length === length) onComplete?.(cleaned);
+  };
+
+  // Автофокус — клавиатура и подсказка кода из SMS появляются без тапа по полю.
   useEffect(() => {
-    if (disabled) return;
-    const firstEmpty = otp.findIndex((d) => !d);
-    inputRefs.current[firstEmpty === -1 ? length - 1 : firstEmpty]?.focus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!disabled) inputRef.current?.focus();
   }, [disabled]);
 
   // WebOTP API — автосчитывание кода из SMS (Android Chrome). На iOS код
@@ -69,11 +66,6 @@ export function OtpInput({
       .then((cred: any) => {
         const code = extractCode(String(cred?.code ?? ""));
         if (!code) return;
-        const newOtp = new Array(length).fill("");
-        code.split("").forEach((c, i) => {
-          if (i < length) newOtp[i] = c;
-        });
-        setOtp(newOtp);
         onChange(code);
         if (code.length === length) onComplete?.(code);
       })
@@ -84,111 +76,82 @@ export function OtpInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Заполнить несколько ячеек сразу (автозаполнение SMS / вставка).
-  const fillFrom = (digits: string, index: number) => {
-    const newOtp = [...otp];
-    for (let i = 0; i < digits.length && index + i < length; i++) {
-      newOtp[index + i] = digits[i];
-    }
-    setOtp(newOtp);
-    const otpValue = newOtp.join("");
-    onChange(otpValue);
-    const nextIndex = Math.min(index + digits.length, length - 1);
-    inputRefs.current[nextIndex]?.focus();
-    if (otpValue.length === length) {
-      onComplete?.(otpValue);
-    }
-  };
-
-  const handleChange = (element: HTMLInputElement, index: number) => {
-    const raw = element.value;
-    const digits = raw.replace(/\D/g, "");
-
-    // Нецифровой символ — игнорируем.
-    if (raw !== "" && digits === "") {
-      return;
-    }
-
-    // Автозаполнение из SMS (iOS/Android) кидает весь текст сообщения в одно
-    // поле — вытаскиваем из него код и распределяем по ячейкам.
-    if (digits.length > 1) {
-      const code = extractCode(raw);
-      // Полный код раскладываем всегда с первой ячейки, куда бы его ни вставили.
-      fillFrom(code, code.length === length ? 0 : index);
-      return;
-    }
-
-    const newOtp = [...otp];
-    newOtp[index] = digits.slice(-1);
-    setOtp(newOtp);
-
-    const otpValue = newOtp.join("");
-    onChange(otpValue);
-
-    if (digits && index < length - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    if (otpValue.length === length) {
-      onComplete?.(otpValue);
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
-    // Обработка Backspace
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-    
-    // Обработка стрелок
-    if (e.key === "ArrowLeft" && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-    if (e.key === "ArrowRight" && index < length - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
+  const activeIndex = Math.min(digits.length, length - 1);
 
   return (
-    <div className={`flex gap-2 justify-center ${className}`}>
-      {otp.map((digit, index) => (
-        <input
-          key={index}
-          ref={(el) => {
-            inputRefs.current[index] = el;
-          }}
-          type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          name={index === 0 ? "one-time-code" : undefined}
-          value={digit}
-          onChange={(e) => handleChange(e.target, index)}
-          onKeyDown={(e) => handleKeyDown(e, index)}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = error
-              ? "var(--error)"
-              : "var(--text-primary)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = error
-              ? "var(--error)"
-              : "var(--border-color)";
-          }}
-          disabled={disabled}
-          className="w-14 h-16 text-center text-2xl font-bold rounded-2xl border focus:outline-none transition-all"
-          style={{
-            color: "var(--text-primary)",
-            backgroundColor: error
-              ? "rgba(255, 68, 68, 0.12)"
-              : "var(--surface)",
-            borderColor: error ? "var(--error)" : "var(--border-color)",
-            boxShadow: "none",
-            outline: "none",
-            opacity: disabled ? 0.5 : 1,
-            cursor: disabled ? "not-allowed" : "text",
-          }}
-        />
-      ))}
+    <div
+      className={`relative flex gap-2 justify-center ${className}`}
+      onClick={() => inputRef.current?.focus()}
+    >
+      {/* Единственное настоящее поле — прозрачное, растянуто поверх ячеек */}
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        name="one-time-code"
+        value={digits}
+        onChange={(e) => applyValue(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        disabled={disabled}
+        aria-label="Код из SMS"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          opacity: 0,
+          border: "none",
+          outline: "none",
+          background: "transparent",
+          caretColor: "transparent",
+          fontSize: 16, // не даёт iOS зумить страницу при фокусе
+          cursor: disabled ? "not-allowed" : "text",
+          zIndex: 1,
+        }}
+      />
+
+      {/* Визуальные ячейки */}
+      {Array.from({ length }).map((_, index) => {
+        const isActive = focused && !disabled && index === activeIndex && digits.length < length;
+        return (
+          <div
+            key={index}
+            aria-hidden
+            className="w-14 h-16 flex items-center justify-center text-2xl font-bold rounded-2xl border transition-all"
+            style={{
+              color: "var(--text-primary)",
+              backgroundColor: error ? "rgba(255, 68, 68, 0.12)" : "var(--surface)",
+              borderColor: error
+                ? "var(--error)"
+                : isActive
+                  ? "var(--text-primary)"
+                  : "var(--border-color)",
+              opacity: disabled ? 0.5 : 1,
+            }}
+          >
+            {digits[index] ?? ""}
+            {isActive && (
+              <span
+                style={{
+                  width: 2,
+                  height: "1.4em",
+                  marginLeft: 1,
+                  background: "var(--text-primary)",
+                  animation: "otp-caret 1.1s steps(1) infinite",
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+      <style jsx>{`
+        @keyframes otp-caret {
+          0%, 49% { opacity: 1; }
+          50%, 100% { opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
