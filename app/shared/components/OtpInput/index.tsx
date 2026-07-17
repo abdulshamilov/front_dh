@@ -48,6 +48,15 @@ export function OtpInput({
     }
   }, [value, length]);
 
+  // Автофокус на первую пустую ячейку — чтобы клавиатура и подсказка кода
+  // из SMS появлялись сразу, без тапа по полю.
+  useEffect(() => {
+    if (disabled) return;
+    const firstEmpty = otp.findIndex((d) => !d);
+    inputRefs.current[firstEmpty === -1 ? length - 1 : firstEmpty]?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disabled]);
+
   // WebOTP API — автосчитывание кода из SMS (Android Chrome). На iOS код
   // подставляется через клавиатурную подсказку (autoComplete="one-time-code").
   useEffect(() => {
